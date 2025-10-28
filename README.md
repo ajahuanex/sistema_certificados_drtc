@@ -2198,3 +2198,5 @@ Este proyecto es propiedad de la Dirección Regional de Transportes y Comunicaci
 ---
 
 **Sistema de Certificados DRTC Puno** - Desarrollado para la Dirección Regional de Transportes y Comunicaciones de Puno
+#   s i s t e m a _ c e r t i f i c a d o s _ d r t c  
+ 
