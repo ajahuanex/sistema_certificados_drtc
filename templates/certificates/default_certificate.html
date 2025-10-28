@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado - {{ participant.full_name }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            width: 297mm;
+            height: 210mm;
+            position: relative;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .certificate-container {
+            width: 100%;
+            height: 100%;
+            padding: 20mm;
+            position: relative;
+            border: 15px solid #2c3e50;
+            background: white;
+        }
+        
+        .certificate-border {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #3498db;
+            padding: 15mm;
+            position: relative;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15mm;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+        }
+        
+        .institution-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .institution-subtitle {
+            font-size: 12pt;
+            color: #34495e;
+            margin-bottom: 3px;
+        }
+        
+        .certificate-title {
+            font-size: 32pt;
+            font-weight: bold;
+            color: #2980b9;
+            text-align: center;
+            margin: 15mm 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .certificate-body {
+            text-align: center;
+            margin: 20mm 0;
+        }
+        
+        .certificate-text {
+            font-size: 14pt;
+            color: #2c3e50;
+            line-height: 1.8;
+            margin-bottom: 10mm;
+        }
+        
+        .participant-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10mm 0;
+            text-transform: uppercase;
+            border-bottom: 2px solid #3498db;
+            display: inline-block;
+            padding: 5px 30px;
+        }
+        
+        .participant-dni {
+            font-size: 12pt;
+            color: #7f8c8d;
+            margin-bottom: 10mm;
+        }
+        
+        .event-details {
+            font-size: 13pt;
+            color: #2c3e50;
+            margin: 10mm 0;
+            line-height: 1.6;
+        }
+        
+        .event-name {
+            font-weight: bold;
+            color: #2980b9;
+            font-size: 16pt;
+        }
+        
+        .attendee-type {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 5mm 0;
+            text-transform: uppercase;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .qr-section {
+            text-align: center;
+        }
+        
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #3498db;
+            padding: 5px;
+            background: white;
+        }
+        
+        .qr-text {
+            font-size: 8pt;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .signature-section {
+            text-align: center;
+            flex: 1;
+            margin: 0 20mm;
+        }
+        
+        .signature-line {
+            border-top: 2px solid #2c3e50;
+            width: 200px;
+            margin: 0 auto 5px;
+        }
+        
+        .signature-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .signature-title {
+            font-size: 9pt;
+            color: #7f8c8d;
+        }
+        
+        .date-section {
+            text-align: center;
+        }
+        
+        .date-label {
+            font-size: 9pt;
+            color: #7f8c8d;
+            margin-bottom: 3px;
+        }
+        
+        .date-value {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 72pt;
+            color: rgba(52, 152, 219, 0.05);
+            font-weight: bold;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="certificate-border">
+            <div class="watermark">DRTC PUNO</div>
+            
+            <div class="header">
+                <div class="logo">
+                    <!-- Logo placeholder - can be replaced with actual logo -->
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" fill="#2980b9"/>
+                        <text x="50" y="60" font-size="40" fill="white" text-anchor="middle" font-weight="bold">DRTC</text>
+                    </svg>
+                </div>
+                <div class="institution-name">
+                    Dirección Regional de Transportes y Comunicaciones
+                </div>
+                <div class="institution-subtitle">
+                    Gobierno Regional de Puno
+                </div>
+                <div class="institution-subtitle">
+                    Perú
+                </div>
+            </div>
+            
+            <div class="certificate-title">
+                Certificado
+            </div>
+            
+            <div class="certificate-body">
+                <div class="certificate-text">
+                    Otorgado a:
+                </div>
+                
+                <div class="participant-name">
+                    {{ participant.full_name }}
+                </div>
+                
+                <div class="participant-dni">
+                    DNI: {{ participant.dni }}
+                </div>
+                
+                <div class="certificate-text">
+                    Por su participación como
+                </div>
+                
+                <div class="attendee-type">
+                    {{ participant.get_attendee_type_display }}
+                </div>
+                
+                <div class="certificate-text">
+                    en el evento:
+                </div>
+                
+                <div class="event-details">
+                    <div class="event-name">{{ event.name }}</div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <div class="qr-section">
+                    {% if qr_code %}
+                    <img src="{{ qr_code }}" alt="Código QR" class="qr-code">
+                    {% else %}
+                    <div class="qr-code"></div>
+                    {% endif %}
+                    <div class="qr-text">Escanea para verificar</div>
+                </div>
+                
+                <div class="signature-section">
+                    <div class="signature-line"></div>
+                    <div class="signature-name">Director Regional</div>
+                    <div class="signature-title">DRTC Puno</div>
+                </div>
+                
+                <div class="date-section">
+                    <div class="date-label">Fecha de emisión:</div>
+                    <div class="date-value">{{ event.event_date|date:"d/m/Y" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

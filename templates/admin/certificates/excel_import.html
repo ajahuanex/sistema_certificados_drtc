@@ -1,0 +1,243 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .info-box {
+        background-color: #e7f3fe;
+        border-left: 4px solid #2196F3;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .warning-box {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .success-box {
+        background-color: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .error-box {
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .column-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+    
+    .column-table th,
+    .column-table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .column-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .result-table {
+        width: 100%;
+        margin: 15px 0;
+    }
+    
+    .result-table th {
+        text-align: left;
+        padding: 8px;
+        width: 60%;
+    }
+    
+    .result-table td {
+        padding: 8px;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    
+    .text-success {
+        color: #28a745;
+    }
+    
+    .text-danger {
+        color: #dc3545;
+    }
+    
+    .error-list {
+        max-height: 300px;
+        overflow-y: auto;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    
+    .error-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Inicio</a>
+    &rsaquo; <a href="{% url 'admin:certificates_participant_changelist' %}">Participantes</a>
+    &rsaquo; Importar desde Excel
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="module">
+    <h2>📋 Instrucciones de Importación</h2>
+    
+    <div class="info-box">
+        <p><strong>Formato del Archivo Excel:</strong></p>
+        <p>El archivo debe contener las siguientes columnas con los nombres exactos (respetando mayúsculas y minúsculas):</p>
+    </div>
+    
+    <table class="column-table">
+        <thead>
+            <tr>
+                <th>Nombre de Columna</th>
+                <th>Descripción</th>
+                <th>Ejemplo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>DNI</strong></td>
+                <td>Número de DNI de 8 dígitos numéricos</td>
+                <td>12345678</td>
+            </tr>
+            <tr>
+                <td><strong>Nombres y Apellidos</strong></td>
+                <td>Nombre completo del participante</td>
+                <td>Juan Pérez García</td>
+            </tr>
+            <tr>
+                <td><strong>Fecha del Evento</strong></td>
+                <td>Fecha en formato DD/MM/YYYY o YYYY-MM-DD</td>
+                <td>15/03/2024 o 2024-03-15</td>
+            </tr>
+            <tr>
+                <td><strong>Tipo de Asistente</strong></td>
+                <td>Debe ser: ASISTENTE, PONENTE u ORGANIZADOR</td>
+                <td>ASISTENTE</td>
+            </tr>
+            <tr>
+                <td><strong>Nombre del Evento</strong></td>
+                <td>Nombre completo del evento o capacitación</td>
+                <td>Capacitación en Seguridad Vial 2024</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="warning-box">
+        <p><strong>⚠️ Requisitos Importantes:</strong></p>
+        <ul>
+            <li>El archivo debe ser formato <strong>.xlsx</strong> o <strong>.xls</strong></li>
+            <li>El tamaño máximo permitido es <strong>10 MB</strong></li>
+            <li>La primera fila debe contener los nombres de las columnas</li>
+            <li>No debe haber filas vacías entre los datos</li>
+            <li>Si un participante ya existe para el mismo evento, se actualizará su información</li>
+        </ul>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="module">
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="errornote">
+        Por favor corrija los errores a continuación.
+    </div>
+    {% endif %}
+
+    <fieldset class="module aligned">
+        {% for field in form %}
+        <div class="form-row {% if field.errors %}errors{% endif %}">
+            {{ field.errors }}
+            <div>
+                <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="help">{{ field.help_text }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </fieldset>
+
+    <div class="submit-row">
+        <input type="submit" value="Importar" class="default">
+        <a href="/admin/certificates/participant/" class="button cancel-link">Cancelar</a>
+    </div>
+</form>
+
+{% if import_result %}
+<div class="module">
+    <h2>📊 Resultado de la Importación</h2>
+
+    {% if import_result.error_count == 0 %}
+    <div class="success-box">
+        <p><strong>✅ Importación completada exitosamente</strong></p>
+    </div>
+    {% else %}
+    <div class="warning-box">
+        <p><strong>⚠️ Importación completada con algunos errores</strong></p>
+    </div>
+    {% endif %}
+
+    <table class="result-table">
+        <tr>
+            <th>Participantes procesados exitosamente:</th>
+            <td class="text-success">{{ import_result.success_count }}</td>
+        </tr>
+        <tr>
+            <th>Errores encontrados:</th>
+            <td class="{% if import_result.error_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                {{ import_result.error_count }}
+            </td>
+        </tr>
+    </table>
+
+    {% if import_result.errors %}
+    <div class="error-box">
+        <h3>❌ Detalles de Errores</h3>
+        <p>Los siguientes registros no pudieron ser procesados:</p>
+        <div class="error-list">
+            {% for error in import_result.errors %}
+            <div class="error-item">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <p style="margin-top: 10px;"><em>Por favor, corrija estos errores en el archivo Excel y vuelva a importar.</em></p>
+    </div>
+    {% endif %}
+    
+    {% if import_result.success_count > 0 %}
+    <div style="margin-top: 20px;">
+        <a href="{% url 'admin:certificates_participant_changelist' %}" class="button">
+            Ver Participantes Importados
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

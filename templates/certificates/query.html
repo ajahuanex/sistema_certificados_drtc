@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Consultar Certificado - DRTC Puno{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+    }
+    
+    .search-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 0.5rem;
+    }
+    
+    .search-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #0d47a1;
+        font-weight: 600;
+    }
+    
+    .btn-search {
+        background-color: #0d47a1;
+        border-color: #0d47a1;
+        padding: 0.6rem 2rem;
+    }
+    
+    .btn-search:hover {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
+    
+    .info-box {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196F3;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    .dni-input {
+        font-size: 1.1rem;
+        padding: 0.75rem;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+    
+    .certificate-card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
+    }
+    
+    .certificate-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 3px solid #0d47a1;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-3">
+            <i class="bi bi-search me-2"></i>Consultar Certificado
+        </h1>
+        <p class="lead mb-0">
+            Ingrese su número de DNI para consultar sus certificados de capacitación
+        </p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card search-card">
+            <div class="card-header">
+                <i class="bi bi-card-text me-2"></i>Búsqueda por DNI
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="queryForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.dni.id_for_label }}" class="form-label fw-semibold">
+                            Número de DNI
+                        </label>
+                        <input 
+                            type="text" 
+                            name="{{ form.dni.name }}"
+                            id="{{ form.dni.id_for_label }}"
+                            class="form-control form-control-lg dni-input {% if form.dni.errors %}is-invalid{% endif %}"
+                            placeholder="12345678"
+                            maxlength="8"
+                            pattern="\d{8}"
+                            required
+                            autofocus
+                            value="{{ dni|default:'' }}"
+                        >
+                        {% if form.dni.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.dni.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Ingrese su DNI de 8 dígitos sin espacios ni guiones
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg btn-search">
+                            <i class="bi bi-search me-2"></i>Buscar Certificados
+                        </button>
+                    </div>
+                </form>
+                
+                {% if message %}
+                <div class="alert alert-info mt-4" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    {{ message }}
+                </div>
+                {% endif %}
+                
+                {% if error %}
+                <div class="alert alert-danger mt-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {{ error }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if certificates %}
+        <div class="mt-4">
+            <h4 class="mb-3">
+                <i class="bi bi-file-earmark-check-fill me-2"></i>
+                Certificados Encontrados ({{ certificates|length }})
+            </h4>
+            {% for certificate in certificates %}
+            <div class="certificate-card card">
+                <div class="card-header">
+                    <i class="bi bi-award-fill me-2"></i>
+                    {{ certificate.participant.event.name }}
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Nombre:</strong> {{ certificate.participant.full_name }}</p>
+                    <p class="mb-2"><strong>Fecha:</strong> {{ certificate.participant.event.event_date|date:"d/m/Y" }}</p>
+                    <p class="mb-2"><strong>Tipo:</strong> {{ certificate.participant.attendee_type }}</p>
+                    <a href="{% url 'certificates:download' certificate.uuid %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-download me-1"></i>Descargar
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="info-box">
+            <h6 class="fw-semibold mb-2">
+                <i class="bi bi-lightbulb-fill me-2"></i>¿Cómo funciona?
+            </h6>
+            <ul class="mb-0 small">
+                <li>Ingrese su número de DNI de 8 dígitos</li>
+                <li>El sistema buscará todos los certificados asociados a su DNI</li>
+                <li>Podrá ver y descargar sus certificados en formato PDF</li>
+                <li>Cada certificado incluye un código QR para verificación</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Solo permitir números en el campo DNI
+    document.getElementById('{{ form.dni.id_for_label }}').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+</script>
+{% endblock %}

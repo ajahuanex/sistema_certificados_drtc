@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Verificar Certificado - DRTC Puno{% endblock %}
+
+{% block extra_css %}
+<style>
+    .verify-header {
+        background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+        color: white;
+        padding: 2.5rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+    }
+    
+    .verification-card {
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+    
+    .verification-card .card-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .verification-card.invalid .card-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    .info-section {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .info-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: #212529;
+    }
+    
+    .badge-large {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .signature-badge {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .signature-badge.unsigned {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+    
+    .qr-section {
+        text-align: center;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .qr-code-display {
+        max-width: 250px;
+        margin: 1rem auto;
+        padding: 1rem;
+        background-color: white;
+        border: 3px solid #0d47a1;
+        border-radius: 0.5rem;
+    }
+    
+    .verification-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-verification {
+        border-left: 4px solid #28a745;
+        background-color: #d4edda;
+    }
+    
+    .alert-verification.invalid {
+        border-left: 4px solid #dc3545;
+        background-color: #f8d7da;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if certificate %}
+<div class="verify-header text-center">
+    <div class="container">
+        <div class="verification-icon text-success">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h1 class="display-6 fw-bold mb-2">Certificado Verificado</h1>
+        <p class="lead mb-0">Este certificado es auténtico y válido</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="verification-card card">
+                <div class="card-header text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-fill-check me-2"></i>
+                        Información del Certificado
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-verification" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-3" style="font-size: 2rem;"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">Certificado Auténtico</h6>
+                                <p class="mb-0 small">
+                                    Este certificado ha sido emitido por la Dirección Regional de Transportes 
+                                    y Comunicaciones de Puno y se encuentra registrado en nuestro sistema.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h5 class="mb-3">
+                            <i class="bi bi-person-badge me-2"></i>Datos del Participante
+                        </h5>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-person-fill me-2"></i>Nombre Completo
+                            </div>
+                            <div class="info-value">
+                                {{ certificate.participant.full_name }}
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-card-text me-2"></i>Número de DNI
+                            </div>
+                            <div class="info-value">
+                                {{ certificate.participant.dni }}
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-tag-fill me-2"></i>Tipo de Participación
+                            </div>
+                            <div class="info-value">
+                                {% if certificate.participant.attendee_type == "ASISTENTE" %}
+                                <span class="badge bg-info badge-large">
+                                    <i class="bi bi-person-check me-1"></i>Asistente
+                                </span>
+                                {% elif certificate.participant.attendee_type == "PONENTE" %}
+                                <span class="badge bg-success badge-large">
+                                    <i class="bi bi-mic-fill me-1"></i>Ponente
+                                </span>
+                                {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
+                                <span class="badge bg-purple badge-large" style="background-color: #6f42c1;">
+                                    <i class="bi bi-gear-fill me-1"></i>Organizador
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h5 class="mb-3">
+                            <i class="bi bi-calendar-event me-2"></i>Datos del Evento
+                        </h5>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-bookmark-fill me-2"></i>Nombre del Evento
+                            </div>
+                            <div class="info-value">
+                                {{ certificate.participant.event.name }}
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-calendar3 me-2"></i>Fecha del Evento
+                            </div>
+                            <div class="info-value">
+                                {{ certificate.participant.event.event_date|date:"l, d \d\e F \d\e Y" }}
+                            </div>
+                        </div>
+                        
+                        {% if certificate.participant.event.description %}
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-info-circle me-2"></i>Descripción
+                            </div>
+                            <div class="info-value">
+                                {{ certificate.participant.event.description }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h5 class="mb-3">
+                            <i class="bi bi-file-earmark-check me-2"></i>Datos del Certificado
+                        </h5>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-hash me-2"></i>Código de Verificación
+                            </div>
+                            <div class="info-value">
+                                <code style="font-size: 0.9rem;">{{ certificate.uuid }}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-clock-fill me-2"></i>Fecha de Generación
+                            </div>
+                            <div class="info-value">
+                                {{ certificate.generated_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-shield-check me-2"></i>Estado de Firma Digital
+                            </div>
+                            <div class="info-value">
+                                {% if certificate.is_signed %}
+                                <div class="signature-badge">
+                                    <i class="bi bi-shield-fill-check me-2" style="font-size: 1.5rem;"></i>
+                                    <div class="fw-bold">FIRMADO DIGITALMENTE</div>
+                                    <div class="small mt-1">
+                                        Firmado el {{ certificate.signed_at|date:"d/m/Y \a \l\a\s H:i" }}
+                                    </div>
+                                    <div class="small mt-2">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Este certificado tiene validez legal
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="signature-badge unsigned">
+                                    <i class="bi bi-shield me-2" style="font-size: 1.5rem;"></i>
+                                    <div class="fw-bold">SIN FIRMA DIGITAL</div>
+                                    <div class="small mt-1">
+                                        Este certificado aún no ha sido firmado digitalmente
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'certificates:download' certificate.uuid %}" 
+                           class="btn btn-primary btn-lg"
+                           target="_blank">
+                            <i class="bi bi-download me-2"></i>Descargar Certificado PDF
+                        </a>
+                        <a href="{% url 'certificates:query' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-search me-2"></i>Buscar Otro Certificado
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            {% if certificate.qr_code %}
+            <div class="qr-section mt-4">
+                <h5 class="mb-3">
+                    <i class="bi bi-qr-code me-2"></i>Código QR de Verificación
+                </h5>
+                <div class="qr-code-display">
+                    <img src="{{ certificate.qr_code.url }}" alt="Código QR" class="img-fluid">
+                </div>
+                <p class="text-muted small mb-0">
+                    Escanee este código QR para verificar la autenticidad del certificado
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="verify-header text-center">
+    <div class="container">
+        <div class="verification-icon text-danger">
+            <i class="bi bi-x-circle-fill"></i>
+        </div>
+        <h1 class="display-6 fw-bold mb-2">Certificado No Encontrado</h1>
+        <p class="lead mb-0">El código de verificación no es válido</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="verification-card card invalid">
+                <div class="card-header text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Verificación Fallida
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-verification invalid" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-x-circle-fill me-3" style="font-size: 2rem;"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">Certificado No Válido</h6>
+                                <p class="mb-0 small">
+                                    El código de verificación proporcionado no corresponde a ningún 
+                                    certificado registrado en nuestro sistema.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="fw-semibold mb-3">Posibles razones:</h6>
+                        <ul class="text-muted">
+                            <li>El código QR o enlace puede estar dañado o incompleto</li>
+                            <li>El certificado puede haber sido eliminado del sistema</li>
+                            <li>El código de verificación puede haber sido ingresado incorrectamente</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="fw-semibold mb-3">¿Qué puede hacer?</h6>
+                        <ul class="text-muted">
+                            <li>Verifique que el código QR esté completo y legible</li>
+                            <li>Intente escanear nuevamente el código QR</li>
+                            <li>Consulte sus certificados usando su número de DNI</li>
+                            <li>Contacte con la DRTC Puno si el problema persiste</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'certificates:query' %}" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Buscar por DNI
+                        </a>
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-house-fill me-2"></i>Volver al Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

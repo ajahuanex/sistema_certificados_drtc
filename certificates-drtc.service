@@ -1,0 +1,71 @@
+# Servicio Systemd para Sistema de Certificados DRTC Puno
+# Ubicación: /etc/systemd/system/certificates-drtc.service
+#
+# Instrucciones de instalación:
+# 1. Copiar este archivo a /etc/systemd/system/certificates-drtc.service
+# 2. Actualizar rutas y configuración según tu instalación
+# 3. Recargar systemd: sudo systemctl daemon-reload
+# 4. Habilitar servicio: sudo systemctl enable certificates-drtc
+# 5. Iniciar servicio: sudo systemctl start certificates-drtc
+# 6. Verificar estado: sudo systemctl status certificates-drtc
+#
+# Comandos útiles:
+# - Ver logs: sudo journalctl -u certificates-drtc -f
+# - Reiniciar: sudo systemctl restart certificates-drtc
+# - Detener: sudo systemctl stop certificates-drtc
+
+[Unit]
+Description=Sistema de Certificados DRTC Puno - Gunicorn
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+
+# Directorio de trabajo
+WorkingDirectory=/var/www/certificates
+
+# Variables de entorno
+Environment="PATH=/var/www/certificates/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=config.settings.production"
+EnvironmentFile=/var/www/certificates/.env
+
+# Comando de inicio con Gunicorn
+ExecStart=/var/www/certificates/venv/bin/gunicorn \
+    --workers 3 \
+    --worker-class sync \
+    --bind 127.0.0.1:8000 \
+    --timeout 60 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --access-logfile /var/www/certificates/logs/gunicorn-access.log \
+    --error-logfile /var/www/certificates/logs/gunicorn-error.log \
+    --log-level info \
+    --capture-output \
+    --enable-stdio-inheritance \
+    config.wsgi:application
+
+# Reinicio automático en caso de fallo
+Restart=on-failure
+RestartSec=5s
+
+# Límites de recursos
+LimitNOFILE=4096
+
+# Seguridad
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Timeout para inicio y detención
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Señal para reload graceful
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGQUIT
+
+[Install]
+WantedBy=multi-user.target
