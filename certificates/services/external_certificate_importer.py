@@ -1,9 +1,9 @@
 """Servicio para importar certificados externos desde Excel"""
 import openpyxl
+import qrcode
 from datetime import datetime
 from django.db import transaction
 from certificates.models import Event, Participant, Certificate
-from certificates.services.qr_service import QRCodeService
 import logging
 
 logger = logging.getLogger("certificates")
@@ -26,23 +26,23 @@ class ExternalCertificateImporter:
     ]
     
     def __init__(self):
-        self.qr_service = QRCodeService()
         self.errors = []
         self.success_count = 0
         self.updated_count = 0
     
-    def import_from_file(self, file_path):
+    def import_from_file(self, file):
         """
         Importa certificados externos desde un archivo Excel
         
         Args:
-            file_path: Ruta al archivo Excel
+            file: Archivo Excel (puede ser ruta o archivo en memoria)
             
         Returns:
             dict con resultados de la importación
         """
         try:
-            workbook = openpyxl.load_workbook(file_path, data_only=True)
+            # Aceptar tanto rutas como archivos en memoria
+            workbook = openpyxl.load_workbook(file, data_only=True)
             sheet = workbook.active
             
             # Validar columnas
@@ -168,7 +168,23 @@ class ExternalCertificateImporter:
             certificate.external_system = external_system or 'Sistema Externo'
             
             # Regenerar QR code con la URL externa
-            qr_buffer = self.qr_service.generate_qr_code(certificate_url)
+            # Para certificados externos, el QR apunta directamente a la URL externa
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(certificate_url)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            img = img.resize((300, 300))
+            
+            from io import BytesIO
+            qr_buffer = BytesIO()
+            img.save(qr_buffer, format="PNG")
+            qr_buffer.seek(0)
+            
             qr_filename = f"qr_{certificate.uuid}.png"
             certificate.qr_code.save(qr_filename, qr_buffer, save=False)
             
@@ -187,7 +203,23 @@ class ExternalCertificateImporter:
             )
             
             # Generar QR code con la URL externa
-            qr_buffer = self.qr_service.generate_qr_code(certificate_url)
+            # Para certificados externos, el QR apunta directamente a la URL externa
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(certificate_url)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            img = img.resize((300, 300))
+            
+            from io import BytesIO
+            qr_buffer = BytesIO()
+            img.save(qr_buffer, format="PNG")
+            qr_buffer.seek(0)
+            
             qr_filename = f"qr_{certificate.uuid}.png"
             certificate.qr_code.save(qr_filename, qr_buffer, save=True)
             

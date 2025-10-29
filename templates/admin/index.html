@@ -33,55 +33,61 @@
     
     <!-- Import Links -->
     <div style="margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <!-- Import Participants -->
-            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+            <div style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); 
                         color: white; 
-                        padding: 20px; 
-                        border-radius: 8px; 
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h3 style="margin: 0 0 10px 0; font-size: 1.2em;">
+                        padding: 24px; 
+                        border-radius: 12px; 
+                        box-shadow: 0 6px 16px rgba(46, 125, 50, 0.3);
+                        transition: all 0.3s;">
+                <h3 style="margin: 0 0 12px 0; font-size: 1.3em; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     📥 Importar Participantes
                 </h3>
-                <p style="margin: 0 0 15px 0; opacity: 0.9; font-size: 0.9em;">
+                <p style="margin: 0 0 18px 0; font-size: 0.95em; line-height: 1.5; color: rgba(255,255,255,0.95);">
                     Importa participantes desde Excel y genera certificados automáticamente
                 </p>
                 <a href="{% url 'certificates:import_excel' %}" 
-                   style="background: rgba(255,255,255,0.2); 
+                   style="background: rgba(255,255,255,0.25); 
                           color: white; 
-                          padding: 8px 16px; 
+                          padding: 10px 20px; 
                           text-decoration: none; 
-                          border-radius: 4px; 
+                          border-radius: 6px; 
                           display: inline-block;
-                          font-weight: bold;
-                          font-size: 0.9em;
-                          transition: background 0.3s;">
+                          font-weight: 700;
+                          font-size: 0.95em;
+                          transition: all 0.3s;
+                          border: 2px solid rgba(255,255,255,0.3);
+                          box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                     📄 Importar Excel
                 </a>
             </div>
             
             <!-- Import External Certificates -->
-            <div style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%); 
+            <div style="background: linear-gradient(135deg, #6a1b9a 0%, #8e24aa 100%); 
                         color: white; 
-                        padding: 20px; 
-                        border-radius: 8px; 
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h3 style="margin: 0 0 10px 0; font-size: 1.2em;">
+                        padding: 24px; 
+                        border-radius: 12px; 
+                        box-shadow: 0 6px 16px rgba(106, 27, 154, 0.3);
+                        transition: all 0.3s;">
+                <h3 style="margin: 0 0 12px 0; font-size: 1.3em; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     🔗 Importar Certificados Externos
                 </h3>
-                <p style="margin: 0 0 15px 0; opacity: 0.9; font-size: 0.9em;">
+                <p style="margin: 0 0 18px 0; font-size: 0.95em; line-height: 1.5; color: rgba(255,255,255,0.95);">
                     Importa certificados de otros sistemas mediante URLs
                 </p>
                 <a href="{% url 'certificates:import_external' %}" 
-                   style="background: rgba(255,255,255,0.2); 
+                   style="background: rgba(255,255,255,0.25); 
                           color: white; 
-                          padding: 8px 16px; 
+                          padding: 10px 20px; 
                           text-decoration: none; 
-                          border-radius: 4px; 
+                          border-radius: 6px; 
                           display: inline-block;
-                          font-weight: bold;
-                          font-size: 0.9em;
-                          transition: background 0.3s;">
+                          font-weight: 700;
+                          font-size: 0.95em;
+                          transition: all 0.3s;
+                          border: 2px solid rgba(255,255,255,0.3);
+                          box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                     🌐 Importar Externos
                 </a>
             </div>

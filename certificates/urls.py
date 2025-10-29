@@ -1,7 +1,12 @@
 """URLs para la aplicación certificates"""
 from django.urls import path
 from django.views.generic import RedirectView
-from certificates.views.admin_views import ExcelImportView, ExternalCertificateImportView
+from certificates.views.admin_views import (
+    ExcelImportView,
+    ExternalCertificateImportView,
+    DownloadParticipantsTemplateView,
+    DownloadExternalCertificatesTemplateView
+)
 from certificates.views.public_views import (
     CertificateQueryView,
     CertificateDownloadView,
@@ -25,6 +30,10 @@ urlpatterns = [
     path('admin/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('admin/dashboard/charts/', DashboardChartsAPIView.as_view(), name='dashboard_charts'),
     path('admin/dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),
+    
+    # Descargar plantillas Excel
+    path('admin/download-template/participants/', DownloadParticipantsTemplateView.as_view(), name='download_participants_template'),
+    path('admin/download-template/external/', DownloadExternalCertificatesTemplateView.as_view(), name='download_external_template'),
     
     # Rutas públicas
     path('consulta/', CertificateQueryView.as_view(), name='query'),

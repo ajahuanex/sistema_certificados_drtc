@@ -118,6 +118,18 @@
 <div class="module">
     <h2>📋 Instrucciones de Importación de Certificados Externos</h2>
     
+    <div class="success-box" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <p style="margin: 0;"><strong>📥 Descarga la Plantilla Excel</strong></p>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em;">Plantilla con ejemplos de URLs de certificados externos</p>
+        </div>
+        <a href="{% url 'certificates:download_external_template' %}" 
+           class="button" 
+           style="background: #6f42c1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; white-space: nowrap;">
+            🔗 Descargar Plantilla
+        </a>
+    </div>
+    
     <div class="info-box">
         <p><strong>¿Qué es esto?</strong></p>
         <p>Esta funcionalidad permite importar certificados que fueron generados en otros sistemas. 

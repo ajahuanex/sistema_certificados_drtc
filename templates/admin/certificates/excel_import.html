@@ -106,6 +106,18 @@
 <div class="module">
     <h2>📋 Instrucciones de Importación</h2>
     
+    <div class="success-box" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <p style="margin: 0;"><strong>📥 Descarga la Plantilla Excel</strong></p>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em;">Usa esta plantilla con ejemplos para facilitar la importación</p>
+        </div>
+        <a href="{% url 'certificates:download_participants_template' %}" 
+           class="button" 
+           style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; white-space: nowrap;">
+            📄 Descargar Plantilla
+        </a>
+    </div>
+    
     <div class="info-box">
         <p><strong>Formato del Archivo Excel:</strong></p>
         <p>El archivo debe contener las siguientes columnas con los nombres exactos (respetando mayúsculas y minúsculas):</p>
