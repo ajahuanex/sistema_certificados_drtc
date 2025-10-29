@@ -332,13 +332,15 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
         
         # Datos de ejemplo para el preview
         sample_uuid = str(uuid.uuid4())
+        verification_url = f'https://certificados.drtcpuno.gob.pe/verificar/{sample_uuid}'
+        
         sample_data = {
             'full_name': 'JUAN PÉREZ GARCÍA',
             'dni': '12345678',
             'event_name': 'Capacitación en Seguridad Vial 2024',
             'event_date': date.today().strftime('%d de %B de %Y'),
             'attendee_type': 'ASISTENTE',
-            'verification_url': f'https://certificados.drtcpuno.gob.pe/verificar/{sample_uuid}',
+            'verification_url': verification_url,
         }
         
         # Generar PDF de ejemplo
@@ -346,8 +348,8 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
             service = CertificateGeneratorService()
             qr_service = QRCodeService()
             
-            # Generar QR code de ejemplo
-            qr_buffer = qr_service.generate_qr_code(sample_data['verification_url'])
+            # Generar QR code de ejemplo con la URL completa
+            qr_buffer = qr_service.generate_qr(verification_url)
             
             # Generar PDF
             pdf_bytes = service._create_pdf(sample_data, template, qr_buffer)
@@ -359,12 +361,67 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
             import traceback
             error_html = f"""
             <html>
-            <head><title>Error en Preview</title></head>
+            <head>
+                <title>Error en Preview</title>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        max-width: 800px;
+                        margin: 50px auto;
+                        padding: 20px;
+                        background-color: #f8f9fa;
+                    }}
+                    .error-container {{
+                        background: white;
+                        padding: 30px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    }}
+                    h1 {{
+                        color: #c62828;
+                        border-bottom: 3px solid #c62828;
+                        padding-bottom: 10px;
+                    }}
+                    .error-message {{
+                        background: #ffebee;
+                        color: #b71c1c;
+                        padding: 15px;
+                        border-radius: 4px;
+                        margin: 20px 0;
+                        border-left: 4px solid #c62828;
+                    }}
+                    pre {{
+                        background: #263238;
+                        color: #aed581;
+                        padding: 15px;
+                        border-radius: 4px;
+                        overflow-x: auto;
+                        font-size: 12px;
+                    }}
+                    .back-button {{
+                        display: inline-block;
+                        background: #1565c0;
+                        color: white;
+                        padding: 10px 20px;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        margin-top: 20px;
+                    }}
+                    .back-button:hover {{
+                        background: #0d47a1;
+                    }}
+                </style>
+            </head>
             <body>
-                <h1>Error al generar vista previa</h1>
-                <p><strong>Error:</strong> {str(e)}</p>
-                <pre>{traceback.format_exc()}</pre>
-                <p><a href="javascript:history.back()">Volver</a></p>
+                <div class="error-container">
+                    <h1>❌ Error al generar vista previa</h1>
+                    <div class="error-message">
+                        <strong>Error:</strong> {str(e)}
+                    </div>
+                    <h3>Detalles técnicos:</h3>
+                    <pre>{traceback.format_exc()}</pre>
+                    <a href="javascript:history.back()" class="back-button">← Volver</a>
+                </div>
             </body>
             </html>
             """
