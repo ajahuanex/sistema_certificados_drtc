@@ -1,7 +1,7 @@
 """URLs para la aplicación certificates"""
 from django.urls import path
 from django.views.generic import RedirectView
-from certificates.views.admin_views import ExcelImportView
+from certificates.views.admin_views import ExcelImportView, ExternalCertificateImportView
 from certificates.views.public_views import (
     CertificateQueryView,
     CertificateDownloadView,
@@ -21,6 +21,7 @@ urlpatterns = [
     
     # Rutas de administración
     path('admin/import-excel/', ExcelImportView.as_view(), name='import_excel'),
+    path('admin/import-external/', ExternalCertificateImportView.as_view(), name='import_external'),
     path('admin/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('admin/dashboard/charts/', DashboardChartsAPIView.as_view(), name='dashboard_charts'),
     path('admin/dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),

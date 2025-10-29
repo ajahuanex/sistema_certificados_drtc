@@ -204,7 +204,11 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if certificate.is_signed %}
+                            {% if certificate.is_external %}
+                            <span class="badge" style="background-color: #6f42c1; color: white;">
+                                <i class="bi bi-link-45deg me-1"></i>Externo
+                            </span>
+                            {% elif certificate.is_signed %}
                             <span class="badge badge-signed">
                                 <i class="bi bi-shield-fill-check me-1"></i>Firmado
                             </span>

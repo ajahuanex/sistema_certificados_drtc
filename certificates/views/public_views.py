@@ -91,11 +91,29 @@ class CertificateDownloadView(TemplateView):
     """Vista para descargar certificado PDF"""
     
     def get(self, request, uuid, *args, **kwargs):
-        """Retorna el archivo PDF del certificado"""
+        """Retorna el archivo PDF del certificado o redirige a URL externa"""
+        from django.shortcuts import redirect
+        
         # Buscar certificado por UUID
         certificate = get_object_or_404(Certificate, uuid=uuid)
         
-        # Verificar que el archivo existe
+        # Si es un certificado externo, redirigir a la URL externa
+        if certificate.is_external and certificate.external_url:
+            # Registrar acceso en AuditLog
+            AuditLog.objects.create(
+                action_type='QUERY',
+                user=request.user if request.user.is_authenticated else None,
+                description=f'Acceso a certificado externo: {certificate.participant.full_name}',
+                metadata={
+                    'certificate_uuid': str(certificate.uuid),
+                    'external_url': certificate.external_url,
+                    'external_system': certificate.external_system
+                },
+                ip_address=get_client_ip(request)
+            )
+            return redirect(certificate.external_url)
+        
+        # Verificar que el archivo existe para certificados internos
         if not certificate.pdf_file:
             raise Http404("El certificado no tiene un archivo PDF asociado")
         

@@ -117,24 +117,58 @@ class Certificate(models.Model):
     )
     pdf_file = models.FileField(
         upload_to='certificates/%Y/%m/',
-        verbose_name="Archivo PDF"
+        verbose_name="Archivo PDF",
+        blank=True,
+        null=True
     )
     qr_code = models.ImageField(
         upload_to='qr_codes/%Y/%m/',
-        verbose_name="Código QR"
+        verbose_name="Código QR",
+        blank=True,
+        null=True
     )
     generated_at = models.DateTimeField(auto_now_add=True, verbose_name="Generado el")
     is_signed = models.BooleanField(default=False, verbose_name="Firmado digitalmente")
     signed_at = models.DateTimeField(null=True, blank=True, verbose_name="Firmado el")
-    verification_url = models.URLField(verbose_name="URL de verificación")
+    verification_url = models.URLField(verbose_name="URL de verificación", blank=True)
+    
+    # Campos para certificados externos
+    is_external = models.BooleanField(
+        default=False,
+        verbose_name="Certificado Externo",
+        help_text="Indica si el certificado fue importado de un sistema externo"
+    )
+    external_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name="URL Externa",
+        help_text="URL del certificado en el sistema externo"
+    )
+    external_system = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Sistema Externo",
+        help_text="Nombre del sistema del que proviene el certificado"
+    )
 
     class Meta:
         verbose_name = "Certificado"
         verbose_name_plural = "Certificados"
         ordering = ['-generated_at']
+        indexes = [
+            models.Index(fields=['is_external']),
+        ]
 
     def __str__(self):
         return f"Certificado {self.uuid} - {self.participant.full_name}"
+    
+    def get_certificate_url(self):
+        """Retorna la URL del certificado (externa o interna)"""
+        if self.is_external and self.external_url:
+            return self.external_url
+        elif self.pdf_file:
+            return self.pdf_file.url
+        return None
 
 
 
