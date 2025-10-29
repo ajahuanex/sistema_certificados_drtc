@@ -6,49 +6,95 @@
 {% block extrastyle %}
 <style>
     .info-box {
-        background-color: #e7f3fe;
-        border-left: 4px solid #2196F3;
-        padding: 15px;
+        background-color: #e3f2fd;
+        border-left: 5px solid #1976d2;
+        padding: 20px;
         margin-bottom: 20px;
+        border-radius: 4px;
+        color: #0d47a1;
+    }
+    
+    .info-box p, .info-box ul, .info-box li {
+        color: #0d47a1;
+        font-weight: 500;
+    }
+    
+    .info-box strong {
+        color: #01579b;
+        font-weight: 700;
     }
     
     .warning-box {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-        padding: 15px;
+        background-color: #fff8e1;
+        border-left: 5px solid #f57c00;
+        padding: 20px;
         margin-bottom: 20px;
+        border-radius: 4px;
+        color: #e65100;
+    }
+    
+    .warning-box p, .warning-box ul, .warning-box li {
+        color: #e65100;
+        font-weight: 500;
+    }
+    
+    .warning-box strong {
+        color: #bf360c;
+        font-weight: 700;
     }
     
     .success-box {
-        background-color: #d4edda;
-        border-left: 4px solid #28a745;
-        padding: 15px;
+        background-color: #e8f5e9;
+        border-left: 5px solid #388e3c;
+        padding: 20px;
         margin-bottom: 20px;
+        border-radius: 4px;
+        color: #1b5e20;
+    }
+    
+    .success-box p, .success-box strong {
+        color: #1b5e20;
+        font-weight: 600;
     }
     
     .error-box {
-        background-color: #f8d7da;
-        border-left: 4px solid #dc3545;
-        padding: 15px;
+        background-color: #ffebee;
+        border-left: 5px solid #d32f2f;
+        padding: 20px;
         margin-bottom: 20px;
+        border-radius: 4px;
+        color: #b71c1c;
+    }
+    
+    .error-box p, .error-box h3 {
+        color: #b71c1c;
+        font-weight: 600;
     }
     
     .column-table {
         width: 100%;
         border-collapse: collapse;
         margin: 15px 0;
+        border: 1px solid #dee2e6;
     }
     
     .column-table th,
     .column-table td {
-        padding: 10px;
+        padding: 12px;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid #dee2e6;
+        color: #212529;
     }
     
     .column-table th {
         background-color: #f8f9fa;
-        font-weight: 600;
+        font-weight: 700;
+        color: #212529;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .column-table td {
+        background-color: #ffffff;
     }
     
     .result-table {
@@ -88,6 +134,17 @@
     .error-item {
         padding: 5px 0;
         border-bottom: 1px solid #f0f0f0;
+        color: #212529;
+    }
+    
+    .module h2, .module h3 {
+        color: #212529;
+        font-weight: 700;
+    }
+    
+    .module p {
+        color: #495057;
+        line-height: 1.6;
     }
 </style>
 {% endblock %}
