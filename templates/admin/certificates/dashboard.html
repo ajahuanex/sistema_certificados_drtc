@@ -1,0 +1,575 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Sistema de Certificados{% endblock %}
+
+{% block extrahead %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-container {
+            padding: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #007cba;
+        }
+        
+        .stat-card.success {
+            border-left-color: #28a745;
+        }
+        
+        .stat-card.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .stat-card.danger {
+            border-left-color: #dc3545;
+        }
+        
+        .stat-card.info {
+            border-left-color: #17a2b8;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .stat-trend {
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        
+        .trend-up {
+            color: #28a745;
+        }
+        
+        .trend-down {
+            color: #dc3545;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .table-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .dashboard-table th,
+        .dashboard-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .dashboard-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .dashboard-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25em 0.6em;
+            font-size: 0.75em;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+        }
+        
+        .badge-success {
+            color: #fff;
+            background-color: #28a745;
+        }
+        
+        .badge-warning {
+            color: #212529;
+            background-color: #ffc107;
+        }
+        
+        .badge-danger {
+            color: #fff;
+            background-color: #dc3545;
+        }
+        
+        .badge-info {
+            color: #fff;
+            background-color: #17a2b8;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .refresh-btn {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .refresh-btn:hover {
+            background: #005a87;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-title {
+            font-size: 1.8em;
+            color: #333;
+            margin: 0;
+        }
+        
+        .last-updated {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">📊 Dashboard de Certificados</h1>
+        <div>
+            <button class="refresh-btn" onclick="refreshDashboard()">🔄 Actualizar</button>
+            <span class="last-updated" id="lastUpdated">Actualizado: {{ now|date:"d/m/Y H:i" }}</span>
+        </div>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_events }}</div>
+            <div class="stat-label">Total de Eventos</div>
+            <div class="stat-trend">
+                <span class="trend-up">+{{ events_last_month }} este mes</span>
+            </div>
+        </div>
+        
+        <div class="stat-card success">
+            <div class="stat-number">{{ total_certificates }}</div>
+            <div class="stat-label">Certificados Generados</div>
+            <div class="stat-trend">
+                <span class="trend-up">+{{ certificates_last_month }} este mes</span>
+            </div>
+        </div>
+        
+        <div class="stat-card info">
+            <div class="stat-number">{{ signed_certificates }}</div>
+            <div class="stat-label">Certificados Firmados</div>
+            <div class="stat-trend">
+                {% widthratio signed_certificates total_certificates 100 %}% del total
+            </div>
+        </div>
+        
+        <div class="stat-card warning">
+            <div class="stat-number">{{ pending_certificates }}</div>
+            <div class="stat-label">Pendientes de Firma</div>
+            <div class="stat-trend">
+                {% widthratio pending_certificates total_certificates 100 %}% del total
+            </div>
+        </div>
+        
+        <div class="stat-card info">
+            <div class="stat-number">{{ total_participants }}</div>
+            <div class="stat-label">Total Participantes</div>
+            <div class="stat-trend">
+                Promedio: {% widthratio total_participants total_events 1 %} por evento
+            </div>
+        </div>
+        
+        <div class="stat-card success">
+            <div class="stat-number">{{ verifications_last_month }}</div>
+            <div class="stat-label">Verificaciones (30 días)</div>
+            <div class="stat-trend">
+                Certificados verificados
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-title">📈 Certificados por Mes</div>
+            <div class="chart-container">
+                <canvas id="certificatesChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <div class="chart-title">📅 Eventos por Mes</div>
+            <div class="chart-container">
+                <canvas id="eventsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <div class="chart-title">🔍 Verificaciones Diarias</div>
+            <div class="chart-container">
+                <canvas id="verificationsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <div class="chart-title">👥 Tipos de Participantes</div>
+            <div class="chart-container">
+                <canvas id="attendeeTypesChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <div class="chart-title">✅ Estado de Firmas</div>
+            <div class="chart-container">
+                <canvas id="signatureStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablas de Datos -->
+    <div class="tables-grid">
+        <div class="table-card">
+            <div class="table-title">🆕 Eventos Recientes</div>
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Fecha</th>
+                        <th>Participantes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in recent_events %}
+                    <tr>
+                        <td>{{ event.name|truncatechars:40 }}</td>
+                        <td>{{ event.event_date|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ event.participants.count }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No hay eventos recientes</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-title">📜 Certificados Recientes</div>
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Participante</th>
+                        <th>Evento</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cert in recent_certificates %}
+                    <tr>
+                        <td>{{ cert.participant.full_name|truncatechars:25 }}</td>
+                        <td>{{ cert.participant.event.name|truncatechars:30 }}</td>
+                        <td>
+                            {% if cert.is_signed %}
+                                <span class="badge badge-success">Firmado</span>
+                            {% else %}
+                                <span class="badge badge-warning">Sin Firma</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No hay certificados recientes</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-title">📊 Estadísticas por Tipo</div>
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Tipo de Participante</th>
+                        <th>Cantidad</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in attendee_stats %}
+                    <tr>
+                        <td>
+                            {% if stat.attendee_type == 'ASISTENTE' %}
+                                👤 Asistentes
+                            {% elif stat.attendee_type == 'PONENTE' %}
+                                🎤 Ponentes
+                            {% elif stat.attendee_type == 'ORGANIZADOR' %}
+                                👔 Organizadores
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-info">{{ stat.count }}</span></td>
+                        <td>{% widthratio stat.count total_participants 100 %}%</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No hay datos disponibles</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-title">🔄 Actividad Reciente</div>
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Acción</th>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_activity %}
+                    <tr>
+                        <td>
+                            {% if log.action_type == 'IMPORT' %}
+                                📥 Importación
+                            {% elif log.action_type == 'GENERATE' %}
+                                📜 Generación
+                            {% elif log.action_type == 'SIGN' %}
+                                ✍️ Firma
+                            {% elif log.action_type == 'QUERY' %}
+                                🔍 Consulta
+                            {% elif log.action_type == 'VERIFY' %}
+                                ✅ Verificación
+                            {% endif %}
+                        </td>
+                        <td>{{ log.user.username|default:"Sistema" }}</td>
+                        <td>{{ log.timestamp|date:"d/m H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No hay actividad reciente</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Configuración global de Chart.js
+Chart.defaults.responsive = true;
+Chart.defaults.maintainAspectRatio = false;
+
+// Variables para almacenar las instancias de los gráficos
+let certificatesChart, eventsChart, verificationsChart, attendeeTypesChart, signatureStatusChart;
+
+// Función para cargar datos de gráficos
+async function loadChartData(chartType) {
+    try {
+        const response = await fetch(`/admin/certificates/dashboard/charts/?chart=${chartType}`);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error(`Error loading ${chartType} chart:`, error);
+        return null;
+    }
+}
+
+// Función para crear gráfico de línea
+function createLineChart(ctx, data, options = {}) {
+    return new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            ...options
+        }
+    });
+}
+
+// Función para crear gráfico de dona
+function createDoughnutChart(ctx, data, options = {}) {
+    return new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            ...options
+        }
+    });
+}
+
+// Inicializar gráficos
+async function initializeCharts() {
+    // Gráfico de certificados por mes
+    const certificatesData = await loadChartData('certificates_by_month');
+    if (certificatesData) {
+        const ctx1 = document.getElementById('certificatesChart').getContext('2d');
+        certificatesChart = createLineChart(ctx1, certificatesData);
+    }
+    
+    // Gráfico de eventos por mes
+    const eventsData = await loadChartData('events_by_month');
+    if (eventsData) {
+        const ctx2 = document.getElementById('eventsChart').getContext('2d');
+        eventsChart = createLineChart(ctx2, eventsData);
+    }
+    
+    // Gráfico de verificaciones por día
+    const verificationsData = await loadChartData('verifications_by_day');
+    if (verificationsData) {
+        const ctx3 = document.getElementById('verificationsChart').getContext('2d');
+        verificationsChart = createLineChart(ctx3, verificationsData);
+    }
+    
+    // Gráfico de tipos de participantes
+    const attendeeTypesData = await loadChartData('attendee_types');
+    if (attendeeTypesData) {
+        const ctx4 = document.getElementById('attendeeTypesChart').getContext('2d');
+        attendeeTypesChart = createDoughnutChart(ctx4, attendeeTypesData);
+    }
+    
+    // Gráfico de estado de firmas
+    const signatureStatusData = await loadChartData('signature_status');
+    if (signatureStatusData) {
+        const ctx5 = document.getElementById('signatureStatusChart').getContext('2d');
+        signatureStatusChart = createDoughnutChart(ctx5, signatureStatusData);
+    }
+}
+
+// Función para actualizar dashboard
+function refreshDashboard() {
+    // Mostrar indicador de carga
+    document.getElementById('lastUpdated').textContent = 'Actualizando...';
+    
+    // Recargar la página
+    window.location.reload();
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    
+    // Actualizar timestamp
+    const now = new Date();
+    const timestamp = now.toLocaleString('es-PE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    document.getElementById('lastUpdated').textContent = `Actualizado: ${timestamp}`;
+});
+
+// Auto-refresh cada 5 minutos
+setInterval(refreshDashboard, 300000);
+</script>
+{% endblock %}

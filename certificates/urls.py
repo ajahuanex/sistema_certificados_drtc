@@ -6,12 +6,20 @@ from certificates.views.public_views import (
     CertificateDownloadView,
     CertificateVerificationView,
 )
+from certificates.views.dashboard_views import (
+    DashboardView,
+    DashboardChartsAPIView,
+    DashboardStatsAPIView
+)
 
 app_name = 'certificates'
 
 urlpatterns = [
-    # Ruta de importación Excel (admin)
+    # Rutas de administración
     path('admin/import-excel/', ExcelImportView.as_view(), name='import_excel'),
+    path('admin/dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('admin/dashboard/charts/', DashboardChartsAPIView.as_view(), name='dashboard_charts'),
+    path('admin/dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),
     
     # Rutas públicas
     path('consulta/', CertificateQueryView.as_view(), name='query'),
