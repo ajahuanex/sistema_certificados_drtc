@@ -1,0 +1,36 @@
+# Comandos para subir a GitHub
+# Reemplaza TU_USUARIO con tu usuario de GitHub
+
+# 1. Agregar repositorio remoto
+git remote add origin https://github.com/TU_USUARIO/sistema-certificados-drtc.git
+
+# 2. Cambiar rama a main (opcional)
+git branch -M main
+
+# 3. Subir código
+git push -u origin main
+
+# ============================================
+# Comandos útiles para el futuro:
+# ============================================
+
+# Ver estado de cambios
+git status
+
+# Agregar cambios
+git add .
+
+# Hacer commit
+git commit -m "Descripción de los cambios"
+
+# Subir cambios
+git push
+
+# Ver historial
+git log --oneline
+
+# Ver repositorios remotos
+git remote -v
+
+# Actualizar desde GitHub
+git pull

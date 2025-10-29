@@ -237,10 +237,97 @@ class CertificateAdmin(admin.ModelAdmin):
 class CertificateTemplateAdmin(admin.ModelAdmin):
     """Administración de plantillas de certificados"""
 
-    list_display = ["name", "is_default", "created_at", "updated_at"]
+    list_display = ["name", "is_default", "preview_link", "created_at", "updated_at"]
     list_filter = ["is_default", "created_at"]
     search_fields = ["name"]
     ordering = ["-created_at"]
+    readonly_fields = ["preview_button"]
+    
+    def preview_link(self, obj):
+        """Enlace para previsualizar la plantilla"""
+        from django.urls import reverse
+        url = reverse('admin:certificates_certificatetemplate_preview', args=[obj.pk])
+        return format_html(
+            '<a href="{}" target="_blank" class="button">👁️ Vista Previa</a>',
+            url
+        )
+    preview_link.short_description = "Acciones"
+    
+    def preview_button(self, obj):
+        """Botón de preview en el formulario de edición"""
+        if obj.pk:
+            from django.urls import reverse
+            url = reverse('admin:certificates_certificatetemplate_preview', args=[obj.pk])
+            return format_html(
+                '<a href="{}" target="_blank" class="button" style="padding: 10px 15px; background-color: #417690; color: white; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 10px;">👁️ Ver Vista Previa del Certificado</a>',
+                url
+            )
+        return "Guarda la plantilla primero para ver la vista previa"
+    preview_button.short_description = "Vista Previa"
+    
+    def get_urls(self):
+        """Agregar URL personalizada para preview"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:template_id>/preview/',
+                self.admin_site.admin_view(self.preview_template),
+                name='certificates_certificatetemplate_preview',
+            ),
+        ]
+        return custom_urls + urls
+    
+    def preview_template(self, request, template_id):
+        """Vista para previsualizar la plantilla"""
+        from django.shortcuts import get_object_or_404
+        from django.http import HttpResponse
+        from certificates.services.certificate_generator import CertificateGeneratorService
+        from certificates.services.qr_service import QRCodeService
+        from datetime import date
+        import uuid
+        
+        template = get_object_or_404(CertificateTemplate, pk=template_id)
+        
+        # Datos de ejemplo para el preview
+        sample_uuid = str(uuid.uuid4())
+        sample_data = {
+            'full_name': 'JUAN PÉREZ GARCÍA',
+            'dni': '12345678',
+            'event_name': 'Capacitación en Seguridad Vial 2024',
+            'event_date': date.today().strftime('%d de %B de %Y'),
+            'attendee_type': 'ASISTENTE',
+            'verification_url': f'https://certificados.drtcpuno.gob.pe/verificar/{sample_uuid}',
+        }
+        
+        # Generar PDF de ejemplo
+        try:
+            service = CertificateGeneratorService()
+            qr_service = QRCodeService()
+            
+            # Generar QR code de ejemplo
+            qr_buffer = qr_service.generate_qr_code(sample_data['verification_url'])
+            
+            # Generar PDF
+            pdf_bytes = service._create_pdf(sample_data, template, qr_buffer)
+            
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="preview_{template.name}.pdf"'
+            return response
+        except Exception as e:
+            import traceback
+            error_html = f"""
+            <html>
+            <head><title>Error en Preview</title></head>
+            <body>
+                <h1>Error al generar vista previa</h1>
+                <p><strong>Error:</strong> {str(e)}</p>
+                <pre>{traceback.format_exc()}</pre>
+                <p><a href="javascript:history.back()">Volver</a></p>
+            </body>
+            </html>
+            """
+            return HttpResponse(error_html, status=500)
 
 
 @admin.register(AuditLog)
