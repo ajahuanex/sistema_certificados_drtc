@@ -31,5 +31,62 @@
     </div>
     {% endif %}
     
+    <!-- Import Links -->
+    <div style="margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <!-- Import Participants -->
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; 
+                        padding: 20px; 
+                        border-radius: 8px; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.2em;">
+                    📥 Importar Participantes
+                </h3>
+                <p style="margin: 0 0 15px 0; opacity: 0.9; font-size: 0.9em;">
+                    Importa participantes desde Excel y genera certificados automáticamente
+                </p>
+                <a href="{% url 'certificates:import_excel' %}" 
+                   style="background: rgba(255,255,255,0.2); 
+                          color: white; 
+                          padding: 8px 16px; 
+                          text-decoration: none; 
+                          border-radius: 4px; 
+                          display: inline-block;
+                          font-weight: bold;
+                          font-size: 0.9em;
+                          transition: background 0.3s;">
+                    📄 Importar Excel
+                </a>
+            </div>
+            
+            <!-- Import External Certificates -->
+            <div style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%); 
+                        color: white; 
+                        padding: 20px; 
+                        border-radius: 8px; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.2em;">
+                    🔗 Importar Certificados Externos
+                </h3>
+                <p style="margin: 0 0 15px 0; opacity: 0.9; font-size: 0.9em;">
+                    Importa certificados de otros sistemas mediante URLs
+                </p>
+                <a href="{% url 'certificates:import_external' %}" 
+                   style="background: rgba(255,255,255,0.2); 
+                          color: white; 
+                          padding: 8px 16px; 
+                          text-decoration: none; 
+                          border-radius: 4px; 
+                          display: inline-block;
+                          font-weight: bold;
+                          font-size: 0.9em;
+                          transition: background 0.3s;">
+                    🌐 Importar Externos
+                </a>
+            </div>
+        </div>
+    </div>
+    
     {{ block.super }}
 {% endblock %}

@@ -102,11 +102,11 @@ class CertificateAdmin(admin.ModelAdmin):
         "participant_name",
         "participant_dni",
         "event_name",
-        "is_signed",
+        "certificate_type",
         "signed_status",
         "generated_at",
     ]
-    list_filter = ["is_signed", "generated_at", "signed_at"]
+    list_filter = ["is_signed", "is_external", "generated_at", "signed_at"]
     search_fields = [
         "uuid",
         "participant__full_name",
@@ -142,8 +142,24 @@ class CertificateAdmin(admin.ModelAdmin):
 
     event_name.short_description = "Evento"
 
+    def certificate_type(self, obj):
+        """Tipo de certificado (interno/externo)"""
+        if obj.is_external:
+            return format_html(
+                '<span style="color: #6f42c1; font-weight: bold;">🔗 Externo</span>'
+            )
+        return format_html(
+            '<span style="color: #007cba; font-weight: bold;">📄 Interno</span>'
+        )
+    
+    certificate_type.short_description = "Tipo"
+    
     def signed_status(self, obj):
         """Estado de firma con color"""
+        if obj.is_external:
+            return format_html(
+                '<span style="color: #6c757d;">N/A (Externo)</span>'
+            )
         if obj.is_signed:
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Firmado</span>'
@@ -231,6 +247,13 @@ class CertificateAdmin(admin.ModelAdmin):
         )
 
         return response
+    
+    def changelist_view(self, request, extra_context=None):
+        """Agrega contexto adicional a la vista de lista"""
+        extra_context = extra_context or {}
+        extra_context['import_external_url'] = '/admin/import-external/'
+        extra_context['import_excel_url'] = '/admin/import-excel/'
+        return super().changelist_view(request, extra_context=extra_context)
 
 
 @admin.register(CertificateTemplate)

@@ -1,0 +1,28 @@
+{% extends "admin/change_list.html" %}
+
+{% block content_title %}
+    <h1>{{ title }}</h1>
+    
+    <!-- Import Actions -->
+    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007cba;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="font-weight: bold; color: #495057;">
+                <i class="bi bi-upload"></i> Acciones de Importación:
+            </span>
+            <a href="{% url 'certificates:import_excel' %}" 
+               class="button" 
+               style="background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                📥 Importar Participantes
+            </a>
+            <a href="{% url 'certificates:import_external' %}" 
+               class="button" 
+               style="background: #6f42c1; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                🔗 Importar Certificados Externos
+            </a>
+        </div>
+        <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #6c757d;">
+            <strong>Importar Participantes:</strong> Crea participantes y genera certificados automáticamente desde Excel.<br>
+            <strong>Importar Externos:</strong> Registra certificados de otros sistemas mediante URLs.
+        </p>
+    </div>
+{% endblock %}
