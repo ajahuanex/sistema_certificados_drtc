@@ -241,7 +241,25 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
     list_filter = ["is_default", "created_at"]
     search_fields = ["name"]
     ordering = ["-created_at"]
-    readonly_fields = ["preview_button"]
+    readonly_fields = ["preview_button", "created_at", "updated_at"]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'is_default')
+        }),
+        ('Plantilla HTML', {
+            'fields': ('html_template',),
+            'description': 'Código HTML de la plantilla del certificado'
+        }),
+        ('Vista Previa', {
+            'fields': ('preview_button',),
+            'description': 'Previsualiza cómo se verá el certificado con datos de ejemplo'
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
     
     def preview_link(self, obj):
         """Enlace para previsualizar la plantilla"""

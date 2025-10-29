@@ -12,76 +12,6 @@
         border-radius: 0.5rem;
     }
     
-    .certificate-card {
-        border: none;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-        margin-bottom: 1.5rem;
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
-    
-    .certificate-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .certificate-card .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 3px solid #0d47a1;
-        font-weight: 600;
-        padding: 1rem 1.25rem;
-    }
-    
-    .badge-type {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
-    }
-    
-    .badge-asistente {
-        background-color: #17a2b8;
-    }
-    
-    .badge-ponente {
-        background-color: #28a745;
-    }
-    
-    .badge-organizador {
-        background-color: #6f42c1;
-    }
-    
-    .badge-signed {
-        background-color: #28a745;
-    }
-    
-    .badge-unsigned {
-        background-color: #6c757d;
-    }
-    
-    .btn-download {
-        background-color: #0d47a1;
-        border-color: #0d47a1;
-    }
-    
-    .btn-download:hover {
-        background-color: #1976d2;
-        border-color: #1976d2;
-    }
-    
-    .info-row {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    .info-row:last-child {
-        border-bottom: none;
-    }
-    
-    .info-label {
-        font-weight: 600;
-        color: #6c757d;
-    }
-    
     .back-link {
         color: white;
         text-decoration: none;
@@ -91,13 +21,115 @@
         color: #e3f2fd;
         text-decoration: underline;
     }
+    
+    .certificates-table {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .certificates-table table {
+        margin-bottom: 0;
+    }
+    
+    .certificates-table thead {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #0d47a1;
+    }
+    
+    .certificates-table thead th {
+        font-weight: 600;
+        color: #495057;
+        padding: 1rem;
+        border-bottom: 2px solid #0d47a1;
+    }
+    
+    .certificates-table tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    .certificates-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .certificates-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .badge-type {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        font-weight: 500;
+    }
+    
+    .badge-asistente {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .badge-ponente {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .badge-organizador {
+        background-color: #6f42c1;
+        color: white;
+    }
+    
+    .badge-signed {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .badge-unsigned {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .btn-download {
+        background-color: #0d47a1;
+        border-color: #0d47a1;
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-download:hover {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
+    
+    .btn-verify {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .participant-info {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196F3;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    .participant-info h5 {
+        margin-bottom: 0.5rem;
+        color: #0d47a1;
+    }
+    
+    .participant-info p {
+        margin-bottom: 0;
+        color: #495057;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="results-header">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
                 <h1 class="h3 mb-2">
                     <i class="bi bi-file-earmark-check-fill me-2"></i>
@@ -108,7 +140,7 @@
                     para el DNI <strong>{{ dni }}</strong>
                 </p>
             </div>
-            <div>
+            <div class="mt-2 mt-md-0">
                 <a href="{% url 'certificates:query' %}" class="back-link">
                     <i class="bi bi-arrow-left-circle me-1"></i>Nueva Búsqueda
                 </a>
@@ -118,139 +150,121 @@
 </div>
 
 <div class="container">
-    <div class="row">
-        {% for certificate in certificates %}
-        <div class="col-lg-6">
-            <div class="certificate-card card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>
-                        <i class="bi bi-award-fill me-2"></i>
-                        Certificado #{{ forloop.counter }}
-                    </span>
-                    {% if certificate.is_signed %}
-                    <span class="badge badge-signed">
-                        <i class="bi bi-shield-fill-check me-1"></i>Firmado
-                    </span>
-                    {% else %}
-                    <span class="badge badge-unsigned">
-                        <i class="bi bi-shield me-1"></i>Sin Firmar
-                    </span>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    <div class="info-row">
-                        <div class="row">
-                            <div class="col-4 info-label">
-                                <i class="bi bi-person-fill me-1"></i>Nombre:
-                            </div>
-                            <div class="col-8">
-                                {{ certificate.participant.full_name }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <div class="row">
-                            <div class="col-4 info-label">
-                                <i class="bi bi-calendar-event me-1"></i>Evento:
-                            </div>
-                            <div class="col-8">
-                                {{ certificate.participant.event.name }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <div class="row">
-                            <div class="col-4 info-label">
-                                <i class="bi bi-calendar3 me-1"></i>Fecha:
-                            </div>
-                            <div class="col-8">
-                                {{ certificate.participant.event.event_date|date:"d/m/Y" }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <div class="row">
-                            <div class="col-4 info-label">
-                                <i class="bi bi-tag-fill me-1"></i>Tipo:
-                            </div>
-                            <div class="col-8">
-                                {% if certificate.participant.attendee_type == "ASISTENTE" %}
-                                <span class="badge badge-type badge-asistente">
-                                    <i class="bi bi-person-check me-1"></i>Asistente
-                                </span>
-                                {% elif certificate.participant.attendee_type == "PONENTE" %}
-                                <span class="badge badge-type badge-ponente">
-                                    <i class="bi bi-mic-fill me-1"></i>Ponente
-                                </span>
-                                {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
-                                <span class="badge badge-type badge-organizador">
-                                    <i class="bi bi-gear-fill me-1"></i>Organizador
-                                </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-row">
-                        <div class="row">
-                            <div class="col-4 info-label">
-                                <i class="bi bi-clock-fill me-1"></i>Generado:
-                            </div>
-                            <div class="col-8">
-                                {{ certificate.generated_at|date:"d/m/Y H:i" }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {% if certificate.is_signed %}
-                    <div class="info-row">
-                        <div class="row">
-                            <div class="col-4 info-label">
-                                <i class="bi bi-shield-check me-1"></i>Firmado:
-                            </div>
-                            <div class="col-8 text-success">
-                                {{ certificate.signed_at|date:"d/m/Y H:i" }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="card-footer bg-white border-top-0 pt-0 pb-3">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'certificates:download' certificate.uuid %}" 
-                           class="btn btn-primary btn-download" 
-                           target="_blank">
-                            <i class="bi bi-download me-2"></i>Descargar Certificado PDF
-                        </a>
-                        <a href="{% url 'certificates:verify' certificate.uuid %}" 
-                           class="btn btn-outline-secondary btn-sm"
-                           target="_blank">
-                            <i class="bi bi-qr-code me-2"></i>Ver Código de Verificación
-                        </a>
-                    </div>
-                </div>
-            </div>
+    {% if certificates %}
+        {% with first_cert=certificates.0 %}
+        <div class="participant-info">
+            <h5>
+                <i class="bi bi-person-badge-fill me-2"></i>
+                {{ first_cert.participant.full_name }}
+            </h5>
+            <p>
+                <strong>DNI:</strong> {{ first_cert.participant.dni }}
+            </p>
         </div>
-        {% endfor %}
-    </div>
-    
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="alert alert-info">
-                <h6 class="alert-heading">
-                    <i class="bi bi-info-circle-fill me-2"></i>Información Importante
-                </h6>
-                <ul class="mb-0 small">
-                    <li>Los certificados con el badge <span class="badge badge-signed">Firmado</span> tienen validez legal con firma digital</li>
-                    <li>Puede descargar sus certificados en formato PDF haciendo clic en el botón de descarga</li>
-                    <li>Cada certificado incluye un código QR único para verificación de autenticidad</li>
-                    <li>Guarde sus certificados en un lugar seguro para futuras referencias</li>
-                </ul>
-            </div>
+        {% endwith %}
+        
+        <div class="certificates-table">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 30%;">Evento</th>
+                        <th style="width: 12%;">Fecha</th>
+                        <th style="width: 13%;">Tipo</th>
+                        <th style="width: 12%;">Estado</th>
+                        <th style="width: 13%;">Generado</th>
+                        <th style="width: 15%;" class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for certificate in certificates %}
+                    <tr>
+                        <td class="fw-bold text-muted">{{ forloop.counter }}</td>
+                        <td>
+                            <i class="bi bi-calendar-event me-1 text-primary"></i>
+                            {{ certificate.participant.event.name }}
+                        </td>
+                        <td>
+                            <i class="bi bi-calendar3 me-1 text-muted"></i>
+                            {{ certificate.participant.event.event_date|date:"d/m/Y" }}
+                        </td>
+                        <td>
+                            {% if certificate.participant.attendee_type == "ASISTENTE" %}
+                            <span class="badge badge-type badge-asistente">
+                                <i class="bi bi-person-check me-1"></i>Asistente
+                            </span>
+                            {% elif certificate.participant.attendee_type == "PONENTE" %}
+                            <span class="badge badge-type badge-ponente">
+                                <i class="bi bi-mic-fill me-1"></i>Ponente
+                            </span>
+                            {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
+                            <span class="badge badge-type badge-organizador">
+                                <i class="bi bi-gear-fill me-1"></i>Organizador
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if certificate.is_signed %}
+                            <span class="badge badge-signed">
+                                <i class="bi bi-shield-fill-check me-1"></i>Firmado
+                            </span>
+                            {% else %}
+                            <span class="badge badge-unsigned">
+                                <i class="bi bi-shield me-1"></i>Sin Firmar
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ certificate.generated_at|date:"d/m/Y" }}<br>
+                                {{ certificate.generated_at|date:"H:i" }}
+                            </small>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'certificates:download' certificate.uuid %}" 
+                                   class="btn btn-primary btn-download" 
+                                   target="_blank"
+                                   title="Descargar PDF">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <a href="{% url 'certificates:verify' certificate.uuid %}" 
+                                   class="btn btn-outline-secondary btn-verify"
+                                   target="_blank"
+                                   title="Verificar">
+                                    <i class="bi bi-qr-code"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
+        
+        <div class="alert alert-info mt-4">
+            <h6 class="alert-heading">
+                <i class="bi bi-info-circle-fill me-2"></i>Información Importante
+            </h6>
+            <ul class="mb-0 small">
+                <li>Los certificados con el badge <span class="badge badge-signed"><i class="bi bi-shield-fill-check me-1"></i>Firmado</span> tienen validez legal con firma digital</li>
+                <li>Haz clic en <i class="bi bi-download"></i> para descargar el certificado en formato PDF</li>
+                <li>Haz clic en <i class="bi bi-qr-code"></i> para ver el código QR y verificar la autenticidad</li>
+                <li>Cada certificado incluye un código QR único para verificación</li>
+                <li>Guarda tus certificados en un lugar seguro para futuras referencias</li>
+            </ul>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            <h5 class="alert-heading">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                No se encontraron certificados
+            </h5>
+            <p class="mb-0">
+                No hay certificados registrados para el DNI <strong>{{ dni }}</strong>.
+                Por favor verifica el número ingresado o contacta con la DRTC Puno.
+            </p>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
