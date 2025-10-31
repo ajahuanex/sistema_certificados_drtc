@@ -1,26 +1,19 @@
-"""Personalización del sitio de administración"""
+from django.contrib import admin
 from django.contrib.admin import AdminSite
-from django.urls import reverse
-from django.utils.html import format_html
-from django.template.response import TemplateResponse
 
 
-class CertificatesAdminSite(AdminSite):
-    """Sitio de administración personalizado para certificados"""
+class CustomAdminSite(AdminSite):
+    """Admin site personalizado con CSS mejorado"""
     
-    site_header = "Sistema de Certificados DRTC Puno"
-    site_title = "Certificados DRTC"
-    index_title = "Administración de Certificados"
+    site_header = "DRTC Puno - Administración de Certificados"
+    site_title = "DRTC Puno Admin"
+    index_title = "Panel de Administración"
     
-    def index(self, request, extra_context=None):
-        """Página principal del admin con enlace al dashboard"""
-        extra_context = extra_context or {}
-        
-        # Agregar enlace al dashboard
-        extra_context['dashboard_url'] = reverse('certificates:dashboard')
-        
-        return super().index(request, extra_context)
+    class Media:
+        css = {
+            'all': ('admin/css/custom_admin.css',)
+        }
 
 
-# Instancia personalizada del admin
-admin_site = CertificatesAdminSite(name='certificates_admin')
+# Instancia del admin site personalizado
+admin_site = CustomAdminSite(name='admin')

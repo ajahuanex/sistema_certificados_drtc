@@ -6,11 +6,24 @@ from .models import (
     Certificate,
     CertificateTemplate,
     AuditLog,
+    QRProcessingConfig,
 )
 
 
+# Configuración global de Media para todos los admins
+class BaseAdmin(admin.ModelAdmin):
+    """Base admin con CSS personalizado"""
+    class Media:
+        css = {
+            'all': (
+                'admin/css/custom_admin.css',
+                'admin/css/fix-header-contrast.css',  # FIX CRÍTICO - Se carga al final
+            )
+        }
+
+
 @admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
+class EventAdmin(BaseAdmin):
     """Administración de eventos"""
 
     list_display = [
@@ -63,7 +76,7 @@ class EventAdmin(admin.ModelAdmin):
 
 
 @admin.register(Participant)
-class ParticipantAdmin(admin.ModelAdmin):
+class ParticipantAdmin(BaseAdmin):
     """Administración de participantes"""
 
     list_display = [
@@ -94,7 +107,7 @@ class ParticipantAdmin(admin.ModelAdmin):
 
 
 @admin.register(Certificate)
-class CertificateAdmin(admin.ModelAdmin):
+class CertificateAdmin(BaseAdmin):
     """Administración de certificados"""
 
     list_display = [
@@ -122,7 +135,12 @@ class CertificateAdmin(admin.ModelAdmin):
     ]
     ordering = ["-generated_at"]
     raw_id_fields = ["participant"]
-    actions = ["sign_certificates_action", "download_pdf_action"]
+    actions = [
+        "sign_certificates_action",
+        "download_pdf_action",
+        "process_qr_action",
+        "export_for_signing_action",
+    ]
 
     def participant_name(self, obj):
         """Nombre del participante"""
@@ -248,16 +266,116 @@ class CertificateAdmin(admin.ModelAdmin):
 
         return response
     
+    @admin.action(description="🔄 Procesar QR para certificados seleccionados")
+    def process_qr_action(self, request, queryset):
+        """Procesa QR para certificados seleccionados"""
+        from django.http import HttpResponse
+        from certificates.services.pdf_processing import PDFProcessingService
+        from certificates.models import QRProcessingConfig
+        
+        # Filtrar solo certificados que pueden procesarse
+        valid_certs = queryset.filter(processing_status='IMPORTED')
+        
+        if not valid_certs.exists():
+            self.message_user(
+                request,
+                "⚠ No hay certificados válidos para procesar (deben estar en estado IMPORTED)",
+                messages.WARNING
+            )
+            return
+        
+        # Obtener configuración
+        config = QRProcessingConfig.get_active_config()
+        
+        # Procesar cada certificado
+        service = PDFProcessingService()
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for certificate in valid_certs:
+            result = service.process_qr_for_certificate(certificate, config)
+            
+            if result['success']:
+                success_count += 1
+            else:
+                error_count += 1
+                errors.append(f"{certificate.participant.full_name}: {result['error']}")
+        
+        # Mostrar resultados
+        if success_count > 0:
+            self.message_user(
+                request,
+                f"✓ Se procesaron {success_count} certificados exitosamente",
+                messages.SUCCESS
+            )
+        
+        if error_count > 0:
+            self.message_user(
+                request,
+                f"⚠ Se encontraron {error_count} errores",
+                messages.WARNING
+            )
+            for error in errors[:5]:
+                self.message_user(request, error, messages.ERROR)
+    
+    @admin.action(description="📤 Exportar para firma digital")
+    def export_for_signing_action(self, request, queryset):
+        """Exporta certificados para firma digital"""
+        from django.http import HttpResponse
+        from certificates.services.pdf_processing import PDFProcessingService
+        
+        # Filtrar solo certificados que pueden exportarse
+        valid_certs = queryset.filter(processing_status='QR_INSERTED')
+        
+        if not valid_certs.exists():
+            self.message_user(
+                request,
+                "⚠ No hay certificados válidos para exportar (deben estar en estado QR_INSERTED)",
+                messages.WARNING
+            )
+            return
+        
+        # Crear ZIP
+        service = PDFProcessingService()
+        try:
+            zip_bytes, zip_filename = service.create_export_zip(
+                certificates=list(valid_certs),
+                include_metadata=True
+            )
+            
+            # Retornar ZIP como descarga
+            response = HttpResponse(zip_bytes, content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+            
+            self.message_user(
+                request,
+                f"✓ Se exportaron {valid_certs.count()} certificados",
+                messages.SUCCESS
+            )
+            
+            return response
+            
+        except Exception as e:
+            self.message_user(
+                request,
+                f"❌ Error al crear ZIP: {str(e)}",
+                messages.ERROR
+            )
+    
     def changelist_view(self, request, extra_context=None):
         """Agrega contexto adicional a la vista de lista"""
         extra_context = extra_context or {}
         extra_context['import_external_url'] = '/admin/import-external/'
         extra_context['import_excel_url'] = '/admin/import-excel/'
+        extra_context['pdf_import_url'] = '/admin/pdf-import/'
+        extra_context['final_import_url'] = '/admin/final-import/'
+        extra_context['processing_status_url'] = '/admin/processing-status/'
         return super().changelist_view(request, extra_context=extra_context)
 
 
 @admin.register(CertificateTemplate)
-class CertificateTemplateAdmin(admin.ModelAdmin):
+class CertificateTemplateAdmin(BaseAdmin):
     """Administración de plantillas de certificados"""
 
     list_display = ["name", "is_default", "preview_link", "created_at", "updated_at"]
@@ -429,7 +547,7 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
 
 
 @admin.register(AuditLog)
-class AuditLogAdmin(admin.ModelAdmin):
+class AuditLogAdmin(BaseAdmin):
     """Administración de registros de auditoría (solo lectura)"""
 
     list_display = [
@@ -462,3 +580,96 @@ class AuditLogAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """No permitir eliminar registros"""
         return False
+
+
+
+@admin.register(QRProcessingConfig)
+class QRProcessingConfigAdmin(BaseAdmin):
+    """Administración de configuraciones de procesamiento QR"""
+
+    list_display = [
+        "name",
+        "is_active_badge",
+        "qr_position_display",
+        "qr_size_display",
+        "preview_url_display",
+        "updated_at",
+    ]
+    list_filter = ["is_active", "qr_error_correction", "created_at"]
+    search_fields = ["name", "description", "preview_base_url"]
+    readonly_fields = ["created_at", "updated_at", "created_by"]
+    ordering = ["-is_active", "-created_at"]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'description', 'is_active')
+        }),
+        ('Posicionamiento del QR', {
+            'fields': ('default_qr_x', 'default_qr_y', 'default_qr_size'),
+            'description': 'Configuración de la posición y tamaño del código QR en el PDF'
+        }),
+        ('Calidad del QR', {
+            'fields': ('qr_error_correction', 'qr_border', 'qr_box_size'),
+            'description': 'Configuración de calidad y apariencia del código QR'
+        }),
+        ('URL de Preview', {
+            'fields': ('preview_base_url',),
+            'description': 'URL base que se usará en los códigos QR para acceder al preview'
+        }),
+        ('Opciones de Procesamiento', {
+            'fields': ('enable_qr_validation', 'enable_pdf_backup', 'max_pdf_size_mb'),
+            'description': 'Opciones adicionales para el procesamiento de certificados'
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'updated_at', 'created_by'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def is_active_badge(self, obj):
+        """Muestra un badge visual del estado activo"""
+        if obj.is_active:
+            return format_html(
+                '<span style="background-color: #28a745; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold;">✓ Activa</span>'
+            )
+        return format_html(
+            '<span style="background-color: #6c757d; color: white; padding: 3px 10px; border-radius: 12px;">✗ Inactiva</span>'
+        )
+    
+    is_active_badge.short_description = "Estado"
+
+    def qr_position_display(self, obj):
+        """Muestra la posición del QR de forma legible"""
+        return f"({obj.default_qr_x}, {obj.default_qr_y})"
+    
+    qr_position_display.short_description = "Posición QR"
+
+    def qr_size_display(self, obj):
+        """Muestra el tamaño del QR"""
+        return f"{obj.default_qr_size}px"
+    
+    qr_size_display.short_description = "Tamaño QR"
+
+    def preview_url_display(self, obj):
+        """Muestra la URL base de forma truncada"""
+        url = obj.preview_base_url
+        if len(url) > 40:
+            return f"{url[:37]}..."
+        return url
+    
+    preview_url_display.short_description = "URL Base"
+
+    def save_model(self, request, obj, form, change):
+        """Guarda el modelo y registra quién lo creó"""
+        if not change:  # Si es nuevo
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def has_delete_permission(self, request, obj=None):
+        """No permitir eliminar si es la única configuración activa"""
+        if obj and obj.is_active:
+            # Verificar si es la única configuración activa
+            active_count = QRProcessingConfig.objects.filter(is_active=True).count()
+            if active_count <= 1:
+                return False
+        return super().has_delete_permission(request, obj)

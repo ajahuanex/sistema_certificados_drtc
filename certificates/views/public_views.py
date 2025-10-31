@@ -179,3 +179,94 @@ class CertificateVerificationView(DetailView):
                 ip_address=get_client_ip(self.request)
             )
             raise Http404("Certificado no encontrado")
+
+
+
+# ============================================================================
+# VISTA DE PREVIEW DE CERTIFICADOS CON QR
+# ============================================================================
+
+class CertificatePreviewView(TemplateView):
+    """Vista pública para preview de certificados"""
+    
+    template_name = "certificates/preview.html"
+    
+    @method_decorator(ratelimit(key='ip', rate='30/m', method='GET'))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
+    def get(self, request, certificate_uuid):
+        """
+        Muestra el preview del certificado.
+        
+        Args:
+            certificate_uuid: UUID del certificado
+        """
+        try:
+            # Buscar certificado
+            certificate = Certificate.objects.select_related(
+                'participant', 'participant__event'
+            ).get(uuid=certificate_uuid)
+            
+            # Verificar que esté listo para preview
+            if not certificate.is_ready_for_preview():
+                return render(
+                    request,
+                    'certificates/preview_not_ready.html',
+                    {
+                        'certificate': certificate,
+                        'message': 'Este certificado aún no está disponible para visualización pública.'
+                    },
+                    status=403
+                )
+            
+            # Registrar acceso en auditoría
+            AuditLog.objects.create(
+                action_type='VERIFY',
+                description=f'Preview accedido para certificado {certificate_uuid}',
+                metadata={
+                    'certificate_uuid': str(certificate_uuid),
+                    'participant_name': certificate.participant.full_name,
+                    'participant_dni': certificate.participant.dni,
+                },
+                ip_address=get_client_ip(request)
+            )
+            
+            # Preparar contexto
+            context = {
+                'certificate': certificate,
+                'pdf_url': certificate.final_pdf.url if certificate.final_pdf else None,
+                'verification_info': {
+                    'participant_name': certificate.participant.full_name,
+                    'dni': certificate.participant.dni,
+                    'event_name': certificate.participant.event.name,
+                    'event_date': certificate.participant.event.event_date,
+                    'attendee_type': certificate.participant.get_attendee_type_display(),
+                    'issue_date': certificate.generated_at,
+                    'signed_date': certificate.signed_at,
+                },
+                'qr_code_url': certificate.qr_image.url if certificate.qr_image else None,
+            }
+            
+            return render(request, self.template_name, context)
+            
+        except Certificate.DoesNotExist:
+            return render(
+                request,
+                'certificates/preview_not_found.html',
+                {
+                    'uuid': certificate_uuid,
+                    'message': 'El certificado solicitado no existe o no está disponible.'
+                },
+                status=404
+            )
+        except Exception as e:
+            return render(
+                request,
+                'certificates/preview_error.html',
+                {
+                    'error': str(e),
+                    'message': 'Ocurrió un error al cargar el certificado.'
+                },
+                status=500
+            )

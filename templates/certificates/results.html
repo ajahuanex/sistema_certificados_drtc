@@ -1,274 +1,652 @@
 {% extends "base.html" %}
 
+<!-- ★★★ VERSIÓN NUEVA DATATABLE 2.0 ★★★ -->
+
 {% block title %}Resultados de Búsqueda - DRTC Puno{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       DISEÑO MODERNO TIPO DATATABLE
+       ============================================ */
+    
+    .results-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    
+    /* Header compacto */
     .results-header {
         background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
         color: white;
-        padding: 2rem 0;
-        margin-bottom: 2rem;
-        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(13, 71, 161, 0.3);
+    }
+    
+    .results-header h1 {
+        font-size: 1.25rem;
+        margin: 0;
+        font-weight: 500;
     }
     
     .back-link {
         color: white;
         text-decoration: none;
-    }
-    
-    .back-link:hover {
-        color: #e3f2fd;
-        text-decoration: underline;
-    }
-    
-    .certificates-table {
-        background: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-    }
-    
-    .certificates-table table {
-        margin-bottom: 0;
-    }
-    
-    .certificates-table thead {
-        background-color: #f8f9fa;
-        border-bottom: 2px solid #0d47a1;
-    }
-    
-    .certificates-table thead th {
-        font-weight: 600;
-        color: #495057;
-        padding: 1rem;
-        border-bottom: 2px solid #0d47a1;
-    }
-    
-    .certificates-table tbody tr {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
         transition: background-color 0.2s;
     }
     
-    .certificates-table tbody tr:hover {
-        background-color: #f8f9fa;
+    .back-link:hover {
+        background-color: rgba(255, 255, 255, 0.2);
     }
     
-    .certificates-table tbody td {
-        padding: 1rem;
-        vertical-align: middle;
+    /* Card principal de la tabla */
+    .datatable-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
     }
     
-    .badge-type {
-        font-size: 0.85rem;
+    /* Toolbar superior con filtros y contador */
+    .datatable-toolbar {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    
+    .participant-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #e3f2fd;
+        color: #0d47a1;
         padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
         font-weight: 500;
     }
     
-    .badge-asistente {
-        background-color: #17a2b8;
+    .participant-badge i {
+        margin-right: 0.5rem;
+        font-size: 1.1em;
+    }
+    
+    /* Filtros y búsqueda */
+    .datatable-filters {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .filter-input {
+        padding: 0.4rem 0.8rem;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        min-width: 200px;
+        transition: border-color 0.2s;
+    }
+    
+    .filter-input:focus {
+        outline: none;
+        border-color: #1976d2;
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    }
+    
+    .filter-select {
+        padding: 0.4rem 0.8rem;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        background: white;
+        cursor: pointer;
+    }
+    
+    /* Contador de resultados */
+    .results-counter {
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .results-counter strong {
+        color: #0d47a1;
+        font-size: 1.1em;
+    }
+    
+    /* Contenedor de tabla con altura fija y scroll */
+    .datatable-wrapper {
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: auto;
+        position: relative;
+    }
+    
+    /* Scrollbar personalizado */
+    .datatable-wrapper::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .datatable-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .datatable-wrapper::-webkit-scrollbar-thumb {
+        background: #1976d2;
+        border-radius: 4px;
+    }
+    
+    .datatable-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #0d47a1;
+    }
+    
+    /* Tabla */
+    .datatable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .datatable thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #0d47a1;
         color: white;
     }
     
-    .badge-ponente {
-        background-color: #28a745;
-        color: white;
+    .datatable thead th {
+        padding: 0.6rem 0.75rem;
+        text-align: left;
+        font-weight: 500;
+        font-size: 0.8rem;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        border-bottom: 2px solid #1976d2;
+        white-space: nowrap;
     }
     
-    .badge-organizador {
-        background-color: #6f42c1;
-        color: white;
+    .datatable thead th.sortable {
+        cursor: pointer;
+        user-select: none;
     }
     
-    .badge-signed {
-        background-color: #28a745;
-        color: white;
+    .datatable thead th.sortable:hover {
+        background: #1565c0;
     }
     
-    .badge-unsigned {
-        background-color: #6c757d;
-        color: white;
+    .datatable tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s;
+    }
+    
+    .datatable tbody tr:hover {
+        background: #e3f2fd;
+        transform: scale(1.002);
+    }
+    
+    .datatable tbody td {
+        padding: 0.5rem 0.75rem;
+        vertical-align: middle;
+        line-height: 1.4;
+    }
+    
+    .datatable tbody tr.hidden {
+        display: none;
+    }
+    
+    /* Badges compactos */
+    .badge-compact {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        white-space: nowrap;
+    }
+    
+    .badge-asistente { background: #17a2b8; color: white; }
+    .badge-ponente { background: #28a745; color: white; }
+    .badge-organizador { background: #6f42c1; color: white; }
+    .badge-signed { background: #28a745; color: white; }
+    .badge-unsigned { background: #6c757d; color: white; }
+    .badge-external { background: #6f42c1; color: white; }
+    
+    /* Botones de acción compactos */
+    .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: center;
+    }
+    
+    .btn-action {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
     }
     
     .btn-download {
-        background-color: #0d47a1;
-        border-color: #0d47a1;
-        padding: 0.4rem 1rem;
-        font-size: 0.9rem;
+        background: #0d47a1;
+        color: white;
     }
     
     .btn-download:hover {
-        background-color: #1976d2;
-        border-color: #1976d2;
+        background: #1976d2;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(13, 71, 161, 0.3);
     }
     
     .btn-verify {
-        padding: 0.4rem 1rem;
-        font-size: 0.9rem;
-    }
-    
-    .participant-info {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196F3;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border-radius: 0.25rem;
-    }
-    
-    .participant-info h5 {
-        margin-bottom: 0.5rem;
-        color: #0d47a1;
-    }
-    
-    .participant-info p {
-        margin-bottom: 0;
+        background: #f8f9fa;
         color: #495057;
+        border: 1px solid #d0d0d0;
+    }
+    
+    .btn-verify:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+    
+    .btn-signature {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-signature:hover {
+        background: #218838;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+    
+    /* Footer de la tabla */
+    .datatable-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #666;
+    }
+    
+    /* Indicador de número de fila */
+    .row-number {
+        color: #999;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+    
+    /* Texto pequeño */
+    .text-small {
+        font-size: 0.75rem;
+        color: #666;
+        line-height: 1.2;
+    }
+    
+    /* Iconos */
+    .bi {
+        font-size: 0.9em;
+    }
+    
+    /* Animaciones */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .datatable-card {
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .datatable-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .datatable-filters {
+            width: 100%;
+        }
+        
+        .filter-input {
+            width: 100%;
+        }
+        
+        .datatable-wrapper {
+            max-height: 400px;
+        }
+    }
+    
+    /* Estado vacío */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #999;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="results-header">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-            <div>
-                <h1 class="h3 mb-2">
-                    <i class="bi bi-file-earmark-check-fill me-2"></i>
-                    Certificados Encontrados
-                </h1>
-                <p class="mb-0">
-                    Se encontraron <strong>{{ certificates|length }}</strong> certificado{{ certificates|length|pluralize }}
-                    para el DNI <strong>{{ dni }}</strong>
-                </p>
-            </div>
-            <div class="mt-2 mt-md-0">
-                <a href="{% url 'certificates:query' %}" class="back-link">
-                    <i class="bi bi-arrow-left-circle me-1"></i>Nueva Búsqueda
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container">
+<div class="results-container">
     {% if certificates %}
-        {% with first_cert=certificates.0 %}
-        <div class="participant-info">
-            <h5>
-                <i class="bi bi-person-badge-fill me-2"></i>
-                {{ first_cert.participant.full_name }}
-            </h5>
-            <p>
-                <strong>DNI:</strong> {{ first_cert.participant.dni }}
-            </p>
+        <!-- Header compacto -->
+        <div class="results-header">
+            <h1>
+                <i class="bi bi-file-earmark-check-fill me-2"></i>
+                Certificados de {{ certificates.0.participant.full_name }}
+            </h1>
+            <a href="{% url 'certificates:query' %}" class="back-link">
+                <i class="bi bi-arrow-left-circle me-1"></i>Nueva Búsqueda
+            </a>
         </div>
-        {% endwith %}
         
-        <div class="certificates-table">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">#</th>
-                        <th style="width: 30%;">Evento</th>
-                        <th style="width: 12%;">Fecha</th>
-                        <th style="width: 13%;">Tipo</th>
-                        <th style="width: 12%;">Estado</th>
-                        <th style="width: 13%;">Generado</th>
-                        <th style="width: 15%;" class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for certificate in certificates %}
-                    <tr>
-                        <td class="fw-bold text-muted">{{ forloop.counter }}</td>
-                        <td>
-                            <i class="bi bi-calendar-event me-1 text-primary"></i>
-                            {{ certificate.participant.event.name }}
-                        </td>
-                        <td>
-                            <i class="bi bi-calendar3 me-1 text-muted"></i>
-                            {{ certificate.participant.event.event_date|date:"d/m/Y" }}
-                        </td>
-                        <td>
-                            {% if certificate.participant.attendee_type == "ASISTENTE" %}
-                            <span class="badge badge-type badge-asistente">
-                                <i class="bi bi-person-check me-1"></i>Asistente
-                            </span>
-                            {% elif certificate.participant.attendee_type == "PONENTE" %}
-                            <span class="badge badge-type badge-ponente">
-                                <i class="bi bi-mic-fill me-1"></i>Ponente
-                            </span>
-                            {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
-                            <span class="badge badge-type badge-organizador">
-                                <i class="bi bi-gear-fill me-1"></i>Organizador
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if certificate.is_external %}
-                            <span class="badge" style="background-color: #6f42c1; color: white;">
-                                <i class="bi bi-link-45deg me-1"></i>Externo
-                            </span>
-                            {% elif certificate.is_signed %}
-                            <span class="badge badge-signed">
-                                <i class="bi bi-shield-fill-check me-1"></i>Firmado
-                            </span>
-                            {% else %}
-                            <span class="badge badge-unsigned">
-                                <i class="bi bi-shield me-1"></i>Sin Firmar
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <small class="text-muted">
+        <!-- Card de tabla tipo DataTable -->
+        <div class="datatable-card">
+            <!-- Toolbar con filtros y contador -->
+            <div class="datatable-toolbar">
+                <div class="participant-badge">
+                    <i class="bi bi-person-badge-fill"></i>
+                    <span>DNI: <strong>{{ dni }}</strong></span>
+                </div>
+                
+                <div class="datatable-filters">
+                    <input type="text" 
+                           class="filter-input" 
+                           id="searchInput" 
+                           placeholder="🔍 Buscar evento..."
+                           autocomplete="off">
+                    
+                    <select class="filter-select" id="typeFilter">
+                        <option value="">Todos los tipos</option>
+                        <option value="ASISTENTE">Asistente</option>
+                        <option value="PONENTE">Ponente</option>
+                        <option value="ORGANIZADOR">Organizador</option>
+                    </select>
+                    
+                    <select class="filter-select" id="statusFilter">
+                        <option value="">Todos los estados</option>
+                        <option value="signed">Firmados</option>
+                        <option value="unsigned">Sin firmar</option>
+                        <option value="external">Externos</option>
+                    </select>
+                </div>
+                
+                <div class="results-counter">
+                    Mostrando <strong id="visibleCount">{{ certificates|length }}</strong> de <strong>{{ certificates|length }}</strong> certificados
+                </div>
+            </div>
+            
+            <!-- Tabla con scroll -->
+            <div class="datatable-wrapper">
+                <table class="datatable" id="certificatesTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th style="width: 35%;" class="sortable" data-sort="event">Evento</th>
+                            <th style="width: 100px;" class="sortable" data-sort="date">Fecha</th>
+                            <th style="width: 110px;">Tipo</th>
+                            <th style="width: 100px;">Estado</th>
+                            <th style="width: 100px;" class="sortable" data-sort="generated">Generado</th>
+                            <th style="width: 120px;" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for certificate in certificates %}
+                        <tr data-event="{{ certificate.participant.event.name|lower }}"
+                            data-type="{{ certificate.participant.attendee_type }}"
+                            data-status="{% if certificate.is_external %}external{% elif certificate.is_signed %}signed{% else %}unsigned{% endif %}"
+                            data-date="{{ certificate.participant.event.event_date|date:'Y-m-d' }}"
+                            data-generated="{{ certificate.generated_at|date:'Y-m-d' }}">
+                            <td class="row-number">{{ forloop.counter }}</td>
+                            <td>
+                                <i class="bi bi-calendar-event me-1 text-primary"></i>
+                                {{ certificate.participant.event.name }}
+                            </td>
+                            <td class="text-small">
+                                {{ certificate.participant.event.event_date|date:"d/m/Y" }}
+                            </td>
+                            <td>
+                                {% if certificate.participant.attendee_type == "ASISTENTE" %}
+                                <span class="badge-compact badge-asistente">
+                                    <i class="bi bi-person-check"></i>Asistente
+                                </span>
+                                {% elif certificate.participant.attendee_type == "PONENTE" %}
+                                <span class="badge-compact badge-ponente">
+                                    <i class="bi bi-mic-fill"></i>Ponente
+                                </span>
+                                {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
+                                <span class="badge-compact badge-organizador">
+                                    <i class="bi bi-gear-fill"></i>Organizador
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if certificate.is_external %}
+                                <span class="badge-compact badge-external">
+                                    <i class="bi bi-link-45deg"></i>Externo
+                                </span>
+                                {% elif certificate.is_signed %}
+                                <span class="badge-compact badge-signed">
+                                    <i class="bi bi-shield-fill-check"></i>Firmado
+                                </span>
+                                {% else %}
+                                <span class="badge-compact badge-unsigned">
+                                    <i class="bi bi-shield"></i>Sin Firmar
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-small">
                                 {{ certificate.generated_at|date:"d/m/Y" }}<br>
                                 {{ certificate.generated_at|date:"H:i" }}
-                            </small>
-                        </td>
-                        <td class="text-center">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="{% url 'certificates:download' certificate.uuid %}" 
-                                   class="btn btn-primary btn-download" 
-                                   target="_blank"
-                                   title="Descargar PDF">
-                                    <i class="bi bi-download"></i>
-                                </a>
-                                <a href="{% url 'certificates:verify' certificate.uuid %}" 
-                                   class="btn btn-outline-secondary btn-verify"
-                                   target="_blank"
-                                   title="Verificar">
-                                    <i class="bi bi-qr-code"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'certificates:download' certificate.uuid %}" 
+                                       class="btn-action btn-download" 
+                                       target="_blank"
+                                       title="Descargar PDF">
+                                        <i class="bi bi-download"></i>PDF
+                                    </a>
+                                    <a href="{% url 'certificates:verify' certificate.uuid %}" 
+                                       class="btn-action btn-verify"
+                                       target="_blank"
+                                       title="Verificar">
+                                        <i class="bi bi-qr-code"></i>QR
+                                    </a>
+                                    {% if certificate.is_signed %}
+                                    <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
+                                       class="btn-action btn-signature"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       title="Verificar Firma Digital en FirmaPerú">
+                                        <i class="bi bi-shield-fill-check"></i>Firma
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Footer -->
+            <div class="datatable-footer">
+                <div>
+                    <i class="bi bi-info-circle me-1"></i>
+                    Usa los filtros para buscar certificados específicos
+                </div>
+                <div>
+                    Total: <strong>{{ certificates|length }}</strong> certificados
+                </div>
+            </div>
         </div>
         
-        <div class="alert alert-info mt-4">
-            <h6 class="alert-heading">
-                <i class="bi bi-info-circle-fill me-2"></i>Información Importante
-            </h6>
-            <ul class="mb-0 small">
-                <li>Los certificados con el badge <span class="badge badge-signed"><i class="bi bi-shield-fill-check me-1"></i>Firmado</span> tienen validez legal con firma digital</li>
-                <li>Haz clic en <i class="bi bi-download"></i> para descargar el certificado en formato PDF</li>
-                <li>Haz clic en <i class="bi bi-qr-code"></i> para ver el código QR y verificar la autenticidad</li>
-                <li>Cada certificado incluye un código QR único para verificación</li>
-                <li>Guarda tus certificados en un lugar seguro para futuras referencias</li>
-            </ul>
-        </div>
     {% else %}
-        <div class="alert alert-warning">
-            <h5 class="alert-heading">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                No se encontraron certificados
-            </h5>
-            <p class="mb-0">
-                No hay certificados registrados para el DNI <strong>{{ dni }}</strong>.
-                Por favor verifica el número ingresado o contacta con la DRTC Puno.
-            </p>
+        <div class="results-header">
+            <h1>
+                <i class="bi bi-search me-2"></i>
+                Resultados de Búsqueda
+            </h1>
+            <a href="{% url 'certificates:query' %}" class="back-link">
+                <i class="bi bi-arrow-left-circle me-1"></i>Nueva Búsqueda
+            </a>
+        </div>
+        
+        <div class="datatable-card">
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h5>No se encontraron certificados</h5>
+                <p class="text-muted">
+                    No hay certificados registrados para el DNI <strong>{{ dni }}</strong>.<br>
+                    Por favor verifica el número ingresado.
+                </p>
+            </div>
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const typeFilter = document.getElementById('typeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const table = document.getElementById('certificatesTable');
+        const tbody = table ? table.querySelector('tbody') : null;
+        const visibleCount = document.getElementById('visibleCount');
+        
+        if (!tbody) return;
+        
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const totalCount = rows.length;
+        
+        // Función de filtrado
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const typeValue = typeFilter.value;
+            const statusValue = statusFilter.value;
+            
+            let visibleRows = 0;
+            
+            rows.forEach(row => {
+                const event = row.dataset.event || '';
+                const type = row.dataset.type || '';
+                const status = row.dataset.status || '';
+                
+                const matchesSearch = event.includes(searchTerm);
+                const matchesType = !typeValue || type === typeValue;
+                const matchesStatus = !statusValue || status === statusValue;
+                
+                if (matchesSearch && matchesType && matchesStatus) {
+                    row.classList.remove('hidden');
+                    visibleRows++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+            
+            // Actualizar contador
+            if (visibleCount) {
+                visibleCount.textContent = visibleRows;
+            }
+            
+            // Renumerar filas visibles
+            let counter = 1;
+            rows.forEach(row => {
+                if (!row.classList.contains('hidden')) {
+                    const numberCell = row.querySelector('.row-number');
+                    if (numberCell) {
+                        numberCell.textContent = counter++;
+                    }
+                }
+            });
+        }
+        
+        // Event listeners
+        if (searchInput) {
+            searchInput.addEventListener('input', filterTable);
+        }
+        
+        if (typeFilter) {
+            typeFilter.addEventListener('change', filterTable);
+        }
+        
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterTable);
+        }
+        
+        // Ordenamiento
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+        let currentSort = { column: null, ascending: true };
+        
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const sortType = this.dataset.sort;
+                const ascending = currentSort.column === sortType ? !currentSort.ascending : true;
+                
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+                    
+                    if (sortType === 'event') {
+                        aVal = a.dataset.event;
+                        bVal = b.dataset.event;
+                    } else if (sortType === 'date') {
+                        aVal = a.dataset.date;
+                        bVal = b.dataset.date;
+                    } else if (sortType === 'generated') {
+                        aVal = a.dataset.generated;
+                        bVal = b.dataset.generated;
+                    }
+                    
+                    if (aVal < bVal) return ascending ? -1 : 1;
+                    if (aVal > bVal) return ascending ? 1 : -1;
+                    return 0;
+                });
+                
+                // Reordenar DOM
+                rows.forEach(row => tbody.appendChild(row));
+                
+                // Actualizar estado
+                currentSort = { column: sortType, ascending };
+                
+                // Renumerar
+                filterTable();
+            });
+        });
+    });
+</script>
 {% endblock %}

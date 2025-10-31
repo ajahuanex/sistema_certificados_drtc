@@ -1,0 +1,77 @@
+# Docker Compose para Sistema de Certificados DRTC Puno
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: certificados_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME:-certificados_db}
+      - POSTGRES_USER=${DB_USER:-certificados_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme123}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-certificados_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - certificados_network
+
+  # Aplicación Django
+  web:
+    build: .
+    container_name: certificados_web
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    volumes:
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - DB_NAME=${DB_NAME:-certificados_db}
+      - DB_USER=${DB_USER:-certificados_user}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme123}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - certificados_network
+
+  # Nginx (Servidor web)
+  nginx:
+    image: nginx:alpine
+    container_name: certificados_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./staticfiles:/app/staticfiles:ro
+      - ./media:/app/media:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - certificados_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  certificados_network:
+    driver: bridge

@@ -1,0 +1,285 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Administración{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .final-import-container {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .final-import-container h1 {
+        color: #28a745;
+        border-bottom: 3px solid #28a745;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .upload-area {
+        border: 3px dashed #ccc;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9fa;
+        margin: 20px 0;
+        transition: all 0.3s;
+    }
+    
+    .upload-area:hover {
+        border-color: #28a745;
+        background: #d4edda;
+    }
+    
+    .upload-area.dragover {
+        border-color: #28a745;
+        background: #d4edda;
+    }
+    
+    .upload-area input[type="file"] {
+        display: none;
+    }
+    
+    .upload-label {
+        cursor: pointer;
+        display: inline-block;
+        padding: 15px 30px;
+        background: #28a745;
+        color: white;
+        border-radius: 4px;
+        font-weight: bold;
+        transition: background 0.3s;
+    }
+    
+    .upload-label:hover {
+        background: #218838;
+    }
+    
+    .file-list {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .file-item {
+        padding: 8px;
+        margin: 5px 0;
+        background: white;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .file-item .remove-btn {
+        color: #dc3545;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    
+    .submit-btn {
+        background: #28a745;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .submit-btn:hover {
+        background: #218838;
+    }
+    
+    .submit-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    .info-box {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    
+    .info-box h3 {
+        margin-top: 0;
+        color: #155724;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    
+    .warning-box h3 {
+        margin-top: 0;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="final-import-container">
+    <h1>✅ {{ title }}</h1>
+    
+    <div class="info-box">
+        <h3>ℹ️ Instrucciones</h3>
+        <ul>
+            <li>Suba los certificados PDF que ya fueron firmados digitalmente</li>
+            <li>Los archivos deben mantener el UUID en el nombre (ej: 123e4567-e89b-12d3-a456-426614174000_12345678.pdf)</li>
+            <li>El sistema identificará automáticamente cada certificado por su UUID</li>
+            <li>Los certificados se actualizarán a estado "SIGNED_FINAL" y estarán disponibles para preview público</li>
+        </ul>
+    </div>
+    
+    <div class="warning-box">
+        <h3>⚠️ Importante</h3>
+        <ul>
+            <li>Solo se pueden importar certificados que estén en estado "EXPORTED_FOR_SIGNING"</li>
+            <li>Asegúrese de que los archivos mantengan el UUID original en el nombre</li>
+            <li>Los certificados firmados reemplazarán las versiones anteriores</li>
+        </ul>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" id="importForm">
+        {% csrf_token %}
+        
+        <div class="upload-area" id="uploadArea">
+            <label for="pdf_files" class="upload-label">
+                📄 Seleccionar Certificados Firmados
+            </label>
+            <input type="file" name="pdf_files" id="pdf_files" multiple accept=".pdf">
+            <p style="margin-top: 15px; color: #666;">
+                O arrastre y suelte archivos PDF aquí
+            </p>
+            <p style="font-size: 12px; color: #999;">
+                Los archivos deben incluir el UUID en el nombre
+            </p>
+        </div>
+        
+        <div id="fileList" class="file-list" style="display: none;"></div>
+        
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+            Importar Certificados Firmados
+        </button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('pdf_files');
+    const fileList = document.getElementById('fileList');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadLabel = document.querySelector('.upload-label');
+    
+    let selectedFiles = [];
+    
+    // Click en label para abrir selector
+    uploadLabel.addEventListener('click', function(e) {
+        e.preventDefault();
+        fileInput.click();
+    });
+    
+    // Cambio en input de archivos
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    function handleFiles(files) {
+        selectedFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        
+        if (selectedFiles.length === 0) {
+            alert('Por favor seleccione solo archivos PDF');
+            return;
+        }
+        
+        updateFileList();
+        submitBtn.disabled = false;
+    }
+    
+    function updateFileList() {
+        if (selectedFiles.length === 0) {
+            fileList.style.display = 'none';
+            submitBtn.disabled = true;
+            return;
+        }
+        
+        fileList.style.display = 'block';
+        fileList.innerHTML = '<strong>Archivos seleccionados (' + selectedFiles.length + '):</strong>';
+        
+        selectedFiles.forEach((file, index) => {
+            const hasUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(file.name);
+            const statusIcon = hasUUID ? '✓' : '⚠️';
+            const statusColor = hasUUID ? '#28a745' : '#ffc107';
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+                <span>
+                    <span style="color: ${statusColor}; font-weight: bold;">${statusIcon}</span>
+                    📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                </span>
+                <span class="remove-btn" data-index="${index}">✖</span>
+            `;
+            fileList.appendChild(fileItem);
+        });
+        
+        // Agregar event listeners para remover archivos
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                selectedFiles.splice(index, 1);
+                updateFileList();
+            });
+        });
+    }
+    
+    // Validar formulario antes de enviar
+    document.getElementById('importForm').addEventListener('submit', function(e) {
+        if (selectedFiles.length === 0) {
+            e.preventDefault();
+            alert('Por favor seleccione al menos un archivo PDF');
+            return false;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Importando...';
+    });
+});
+</script>
+{% endblock %}

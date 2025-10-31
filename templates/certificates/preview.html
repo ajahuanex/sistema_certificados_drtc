@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado - {{ verification_info.participant_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .authenticity-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .authenticity-badge::before {
+            content: "✅ ";
+            font-size: 1.3em;
+        }
+        
+        .verification-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .verification-card h2 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-item label {
+            display: block;
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-item value {
+            display: block;
+            color: #333;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .pdf-viewer-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .pdf-viewer-container h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .pdf-viewer {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+        
+        .qr-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        .qr-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .qr-section img {
+            max-width: 200px;
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.9;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .download-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .verify-signature-btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        
+        .verify-signature-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
+        
+        .buttons-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .pdf-viewer {
+                height: 500px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .download-btn, .qr-section {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Certificado Verificado</h1>
+            <p>Dirección Regional de Transportes y Comunicaciones - Puno</p>
+        </div>
+        
+        <div style="text-align: center;">
+            <div class="authenticity-badge">
+                Certificado Auténtico y Verificado
+            </div>
+        </div>
+        
+        <div class="verification-card">
+            <h2>📋 Información de Verificación</h2>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Participante</label>
+                    <value>{{ verification_info.participant_name }}</value>
+                </div>
+                
+                <div class="info-item">
+                    <label>DNI</label>
+                    <value>{{ verification_info.dni }}</value>
+                </div>
+                
+                <div class="info-item">
+                    <label>Evento</label>
+                    <value>{{ verification_info.event_name }}</value>
+                </div>
+                
+                <div class="info-item">
+                    <label>Fecha del Evento</label>
+                    <value>{{ verification_info.event_date|date:"d/m/Y" }}</value>
+                </div>
+                
+                <div class="info-item">
+                    <label>Tipo de Participación</label>
+                    <value>{{ verification_info.attendee_type }}</value>
+                </div>
+                
+                <div class="info-item">
+                    <label>Fecha de Emisión</label>
+                    <value>{{ verification_info.issue_date|date:"d/m/Y H:i" }}</value>
+                </div>
+                
+                {% if verification_info.signed_date %}
+                <div class="info-item">
+                    <label>Fecha de Firma Digital</label>
+                    <value>{{ verification_info.signed_date|date:"d/m/Y H:i" }}</value>
+                </div>
+                {% endif %}
+                
+                <div class="info-item">
+                    <label>Código de Verificación</label>
+                    <value>{{ certificate.uuid }}</value>
+                </div>
+            </div>
+            
+            {% if pdf_url %}
+            <div class="buttons-container">
+                <a href="{{ pdf_url }}" class="download-btn" download>
+                    📥 Descargar Certificado PDF
+                </a>
+                <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
+                   class="verify-signature-btn" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   title="Verificar firma digital del certificado en FirmaPerú">
+                    ✅ Verificar Firma Digital
+                </a>
+            </div>
+            <p style="text-align: center; color: #666; font-size: 0.9em; margin-top: 10px;">
+                💡 Descarga el certificado y súbelo al validador de FirmaPerú para verificar su autenticidad
+            </p>
+            {% endif %}
+        </div>
+        
+        {% if pdf_url %}
+        <div class="pdf-viewer-container">
+            <h3>📄 Vista Previa del Certificado</h3>
+            <iframe src="{{ pdf_url }}" class="pdf-viewer" frameborder="0"></iframe>
+        </div>
+        {% endif %}
+        
+        {% if qr_code_url %}
+        <div class="qr-section">
+            <h3>🔍 Código QR de Verificación</h3>
+            <p style="color: #666; margin-bottom: 15px;">
+                Escanea este código para verificar la autenticidad del certificado
+            </p>
+            <img src="{{ qr_code_url }}" alt="Código QR">
+        </div>
+        {% endif %}
+        
+        <div class="footer">
+            <p><strong>Dirección Regional de Transportes y Comunicaciones - Puno</strong></p>
+            <p>Este certificado ha sido verificado y es auténtico</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">
+                Consultado el {{ "now"|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

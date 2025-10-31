@@ -1,62 +1,93 @@
 """Vistas del dashboard de estadísticas"""
-from django.views.generic import TemplateView
+import logging
+import json
+from django.shortcuts import render
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.utils.safestring import mark_safe
+
+from certificates.services.dashboard_stats import DashboardStatsService
+from certificates.models import Certificate
+
+logger = logging.getLogger(__name__)
+
+
+@staff_member_required
+def dashboard_view(request):
+    """
+    Vista del dashboard de estadísticas.
+    Solo accesible para usuarios staff.
+    """
+    try:
+        service = DashboardStatsService()
+        stats = service.get_dashboard_stats()
+        
+        # Obtener certificados recientes para la lista
+        recent_certificates = Certificate.objects.select_related(
+            'participant', 'participant__event'
+        ).order_by('-generated_at')[:10]
+        
+    except Exception as e:
+        logger.error(f"Error loading dashboard: {e}", exc_info=True)
+        messages.error(request, f"Error al cargar estadísticas: {e}")
+        stats = {}
+        recent_certificates = []
+    
+    # Serializar datos para JavaScript
+    stats_json = stats.copy()
+    if 'certificates' in stats_json and 'by_month' in stats_json['certificates']:
+        stats_json['certificates']['by_month'] = mark_safe(json.dumps(stats_json['certificates']['by_month']))
+    if 'queries' in stats_json and 'by_day' in stats_json['queries']:
+        stats_json['queries']['by_day'] = mark_safe(json.dumps(stats_json['queries']['by_day']))
+    
+    context = {
+        'stats': stats_json,
+        'recent_certificates': recent_certificates,
+        'last_updated': cache.get('dashboard_stats_timestamp'),
+        'title': 'Dashboard de Estadísticas',
+    }
+    
+    return render(request, 'admin/dashboard.html', context)
+
+
+@staff_member_required
+@require_http_methods(["POST"])
+def dashboard_refresh(request):
+    """
+    Limpia el caché del dashboard y recalcula las estadísticas.
+    """
+    try:
+        service = DashboardStatsService()
+        service.clear_cache()
+        
+        # Recalcular estadísticas
+        service.get_dashboard_stats()
+        
+        messages.success(request, "✓ Estadísticas actualizadas correctamente")
+        
+    except Exception as e:
+        logger.error(f"Error refreshing dashboard: {e}", exc_info=True)
+        messages.error(request, f"Error al actualizar estadísticas: {e}")
+    
+    # Redirigir de vuelta al dashboard
+    from django.shortcuts import redirect
+    return redirect('certificates:admin_dashboard')
+
+
+# ============================================================================
+# VISTAS LEGACY (mantener por compatibilidad)
+# ============================================================================
+
+from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-from django.http import JsonResponse
-import json
 
 from certificates.models import Event, Participant, Certificate, AuditLog
-
-
-@method_decorator(staff_member_required, name="dispatch")
-class DashboardView(TemplateView):
-    """Vista principal del dashboard con estadísticas generales"""
-    template_name = "admin/certificates/dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        # Métricas generales
-        context.update({
-            'total_events': Event.objects.count(),
-            'total_participants': Participant.objects.count(),
-            'total_certificates': Certificate.objects.count(),
-            'signed_certificates': Certificate.objects.filter(is_signed=True).count(),
-            'pending_certificates': Certificate.objects.filter(is_signed=False).count(),
-        })
-        
-        # Métricas del último mes
-        last_month = timezone.now() - timedelta(days=30)
-        context.update({
-            'events_last_month': Event.objects.filter(created_at__gte=last_month).count(),
-            'certificates_last_month': Certificate.objects.filter(generated_at__gte=last_month).count(),
-            'verifications_last_month': AuditLog.objects.filter(
-                action_type='VERIFY',
-                timestamp__gte=last_month
-            ).count(),
-        })
-        
-        # Eventos recientes
-        context['recent_events'] = Event.objects.select_related().order_by('-created_at')[:5]
-        
-        # Certificados recientes
-        context['recent_certificates'] = Certificate.objects.select_related(
-            'participant', 'participant__event'
-        ).order_by('-generated_at')[:5]
-        
-        # Estadísticas por tipo de asistente
-        attendee_stats = Participant.objects.values('attendee_type').annotate(
-            count=Count('id')
-        ).order_by('-count')
-        context['attendee_stats'] = attendee_stats
-        
-        # Actividad reciente (últimos 10 logs)
-        context['recent_activity'] = AuditLog.objects.select_related('user').order_by('-timestamp')[:10]
-        
-        return context
 
 
 @method_decorator(staff_member_required, name="dispatch")

@@ -336,3 +336,275 @@ class DownloadExternalCertificatesTemplateView(View):
         
         wb.save(response)
         return response
+
+
+
+# ============================================================================
+# VISTAS PARA PROCESAMIENTO DE CERTIFICADOS CON QR
+# ============================================================================
+
+from django.views import View
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from certificates.models import Certificate, Event, QRProcessingConfig
+from certificates.services.pdf_processing import PDFProcessingService
+
+
+class StaffRequiredMixin(UserPassesTestMixin):
+    """Mixin para requerir que el usuario sea staff"""
+    
+    def test_func(self):
+        return self.request.user.is_staff
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class PDFImportView(StaffRequiredMixin, View):
+    """Vista para importar certificados PDF originales"""
+    
+    template_name = "admin/certificates/pdf_import.html"
+    
+    def get(self, request):
+        """Muestra el formulario de importación"""
+        events = Event.objects.all().order_by('-event_date')
+        context = {
+            'events': events,
+            'title': 'Importar Certificados PDF',
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        """Procesa la importación de PDFs"""
+        pdf_files = request.FILES.getlist('pdf_files')
+        event_id = request.POST.get('event_id')
+        auto_extract_names = request.POST.get('auto_extract_names') == 'on'
+        
+        if not pdf_files:
+            messages.error(request, '❌ No se seleccionaron archivos PDF')
+            return redirect('certificates:pdf_import')
+        
+        if not event_id:
+            messages.error(request, '❌ Debe seleccionar un evento')
+            return redirect('certificates:pdf_import')
+        
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            messages.error(request, '❌ Evento no encontrado')
+            return redirect('certificates:pdf_import')
+        
+        # Procesar PDFs
+        service = PDFProcessingService()
+        result = service.import_pdf_batch(
+            pdf_files=pdf_files,
+            event=event,
+            auto_extract_names=auto_extract_names
+        )
+        
+        # Mostrar resultados
+        if result['success_count'] > 0:
+            messages.success(
+                request,
+                f"✓ Se importaron {result['success_count']} certificados exitosamente"
+            )
+        
+        if result['error_count'] > 0:
+            messages.warning(
+                request,
+                f"⚠ Se encontraron {result['error_count']} errores"
+            )
+            for error in result['errors'][:5]:
+                messages.error(request, error)
+        
+        if result['warnings']:
+            for warning in result['warnings'][:5]:
+                messages.warning(request, warning)
+        
+        return redirect('admin:certificates_certificate_changelist')
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class QRProcessingView(StaffRequiredMixin, View):
+    """Vista para procesar códigos QR en lote"""
+    
+    def post(self, request):
+        """Procesa QR para certificados seleccionados"""
+        certificate_ids = request.POST.getlist('certificate_ids')
+        
+        if not certificate_ids:
+            messages.error(request, '❌ No se seleccionaron certificados')
+            return redirect('admin:certificates_certificate_changelist')
+        
+        # Obtener configuración
+        config = QRProcessingConfig.get_active_config()
+        
+        # Procesar cada certificado
+        service = PDFProcessingService()
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for cert_id in certificate_ids:
+            try:
+                certificate = Certificate.objects.get(id=cert_id)
+                result = service.process_qr_for_certificate(certificate, config)
+                
+                if result['success']:
+                    success_count += 1
+                else:
+                    error_count += 1
+                    errors.append(f"{certificate.participant.full_name}: {result['error']}")
+            except Certificate.DoesNotExist:
+                error_count += 1
+                errors.append(f"Certificado ID {cert_id} no encontrado")
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Error en certificado ID {cert_id}: {str(e)}")
+        
+        # Mostrar resultados
+        if success_count > 0:
+            messages.success(
+                request,
+                f"✓ Se procesaron {success_count} certificados exitosamente"
+            )
+        
+        if error_count > 0:
+            messages.warning(
+                request,
+                f"⚠ Se encontraron {error_count} errores"
+            )
+            for error in errors[:5]:
+                messages.error(request, error)
+        
+        return redirect('admin:certificates_certificate_changelist')
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class ExportForSigningView(StaffRequiredMixin, View):
+    """Vista para exportar certificados para firma digital"""
+    
+    def post(self, request):
+        """Crea y descarga ZIP con certificados"""
+        certificate_ids = request.POST.getlist('certificate_ids')
+        
+        if not certificate_ids:
+            messages.error(request, '❌ No se seleccionaron certificados')
+            return redirect('admin:certificates_certificate_changelist')
+        
+        # Obtener certificados
+        certificates = Certificate.objects.filter(
+            id__in=certificate_ids,
+            processing_status='QR_INSERTED'
+        )
+        
+        if not certificates.exists():
+            messages.error(
+                request,
+                '❌ No hay certificados válidos para exportar (deben estar en estado QR_INSERTED)'
+            )
+            return redirect('admin:certificates_certificate_changelist')
+        
+        # Crear ZIP
+        service = PDFProcessingService()
+        try:
+            zip_bytes, zip_filename = service.create_export_zip(
+                certificates=list(certificates),
+                include_metadata=True
+            )
+            
+            # Retornar ZIP como descarga
+            response = HttpResponse(zip_bytes, content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+            
+            messages.success(
+                request,
+                f"✓ Se exportaron {certificates.count()} certificados"
+            )
+            
+            return response
+            
+        except Exception as e:
+            messages.error(request, f"❌ Error al crear ZIP: {str(e)}")
+            return redirect('admin:certificates_certificate_changelist')
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class FinalImportView(StaffRequiredMixin, View):
+    """Vista para importar certificados firmados finales"""
+    
+    template_name = "admin/certificates/final_import.html"
+    
+    def get(self, request):
+        """Muestra el formulario de importación"""
+        context = {
+            'title': 'Importar Certificados Firmados',
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        """Procesa certificados firmados finales"""
+        pdf_files = request.FILES.getlist('pdf_files')
+        
+        if not pdf_files:
+            messages.error(request, '❌ No se seleccionaron archivos PDF')
+            return redirect('certificates:final_import')
+        
+        # Procesar PDFs finales
+        service = PDFProcessingService()
+        result = service.import_final_certificates(pdf_files)
+        
+        # Mostrar resultados
+        if result['success_count'] > 0:
+            messages.success(
+                request,
+                f"✓ Se importaron {result['success_count']} certificados firmados exitosamente"
+            )
+        
+        if result['error_count'] > 0:
+            messages.warning(
+                request,
+                f"⚠ Se encontraron {result['error_count']} errores"
+            )
+            for error in result['errors'][:5]:
+                messages.error(request, error)
+        
+        return redirect('admin:certificates_certificate_changelist')
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class ProcessingStatusView(StaffRequiredMixin, View):
+    """Vista del panel de estado de procesamiento"""
+    
+    template_name = "admin/certificates/processing_status.html"
+    
+    def get(self, request):
+        """Muestra el panel de estado"""
+        status_filter = request.GET.get('status', 'all')
+        
+        # Obtener certificados
+        certificates = Certificate.objects.select_related(
+            'participant', 'participant__event'
+        ).order_by('-processed_at', '-created_at')
+        
+        # Filtrar por estado si se especifica
+        if status_filter != 'all':
+            certificates = certificates.filter(processing_status=status_filter)
+        
+        # Estadísticas
+        stats = {
+            'total': Certificate.objects.count(),
+            'imported': Certificate.objects.filter(processing_status='IMPORTED').count(),
+            'qr_inserted': Certificate.objects.filter(processing_status='QR_INSERTED').count(),
+            'exported': Certificate.objects.filter(processing_status='EXPORTED_FOR_SIGNING').count(),
+            'signed_final': Certificate.objects.filter(processing_status='SIGNED_FINAL').count(),
+            'errors': Certificate.objects.filter(processing_status='ERROR').count(),
+        }
+        
+        context = {
+            'title': 'Estado de Procesamiento',
+            'certificates': certificates[:100],  # Limitar a 100 para performance
+            'stats': stats,
+            'current_filter': status_filter,
+        }
+        
+        return render(request, self.template_name, context)

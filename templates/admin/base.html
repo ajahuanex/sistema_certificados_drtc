@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* FIX INLINE - Máxima prioridad absoluta */
+    #header { background: #1e3a8a !important; }
+    #header, #header *, #user-tools, #user-tools *, #branding, #branding *, #branding h1, #branding h1 a, #site-name, #site-name a, #user-tools strong, #user-tools a { color: #ffffff !important; }
+    #user-tools button, #logout-form button { background: #ef4444 !important; color: #ffffff !important; }
+</style>
+{% endblock %}

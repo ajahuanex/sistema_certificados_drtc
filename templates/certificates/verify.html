@@ -284,6 +284,19 @@
                            target="_blank">
                             <i class="bi bi-download me-2"></i>Descargar Certificado PDF
                         </a>
+                        {% if certificate.is_signed %}
+                        <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
+                           class="btn btn-success btn-lg"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           title="Verificar firma digital del certificado en FirmaPerú">
+                            <i class="bi bi-shield-fill-check me-2"></i>Verificar Firma Digital
+                        </a>
+                        <p class="text-center text-muted small mt-2 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Descarga el certificado y súbelo al validador de FirmaPerú para verificar su autenticidad
+                        </p>
+                        {% endif %}
                         <a href="{% url 'certificates:query' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-search me-2"></i>Buscar Otro Certificado
                         </a>

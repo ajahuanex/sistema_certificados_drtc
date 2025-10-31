@@ -1,0 +1,276 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">
+    <style>
+        /* Fix crítico para header - inline para máxima prioridad */
+        #header {
+            background: #1e3a8a !important;
+            background-image: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+        }
+        #user-tools, #user-tools *, #user-tools a, #user-tools strong {
+            color: #ffffff !important;
+        }
+        #user-tools a {
+            background: transparent !important;
+        }
+        #user-tools a:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+        #branding h1, #branding h1 a, #site-name, #site-name a {
+            color: #ffffff !important;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="branding">
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            {{ site_header|default:_('Administración DRTC') }}
+        </a>
+    </h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>📊 Dashboard de Estadísticas</h1>
+            {% if last_updated %}
+            <p class="last-updated">Última actualización: {{ last_updated|date:"d/m/Y H:i:s" }}</p>
+            {% endif %}
+        </div>
+        <div class="header-actions">
+            <form method="post" action="{% url 'certificates:dashboard_refresh' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="refresh-button">
+                    🔄 Actualizar
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Stats Cards Grid -->
+    <div class="stats-grid">
+        <!-- Total Certificados -->
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">📄</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.certificates.total|default:0 }}</div>
+                <div class="stat-label">Certificados Totales</div>
+            </div>
+        </div>
+        
+        <!-- Certificados Firmados -->
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">✓</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.certificates.signed|default:0 }}</div>
+                <div class="stat-label">Certificados Firmados</div>
+                <div class="stat-detail">{{ stats.certificates.unsigned|default:0 }} sin firmar</div>
+            </div>
+        </div>
+        
+        <!-- Consultas Hoy -->
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">🔍</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.queries.today|default:0 }}</div>
+                <div class="stat-label">Consultas Hoy</div>
+                <div class="stat-detail">{{ stats.queries.total|default:0 }} totales</div>
+            </div>
+        </div>
+        
+        <!-- Plantillas Activas -->
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">📋</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.templates.total|default:0 }}</div>
+                <div class="stat-label">Plantillas Activas</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Secondary Stats -->
+    <div class="secondary-stats">
+        <div class="stat-item">
+            <span class="stat-item-label">Certificados Internos:</span>
+            <span class="stat-item-value">{{ stats.certificates.internal|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-label">Certificados Externos:</span>
+            <span class="stat-item-value">{{ stats.certificates.external|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-label">Total Eventos:</span>
+            <span class="stat-item-value">{{ stats.quick_stats.events_count|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-label">Total Participantes:</span>
+            <span class="stat-item-value">{{ stats.quick_stats.participants_count|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-item-label">Promedio Cert/Evento:</span>
+            <span class="stat-item-value">{{ stats.quick_stats.avg_certificates_per_event|default:0 }}</span>
+        </div>
+    </div>
+
+    
+    <!-- Charts Grid -->
+    <div class="charts-grid">
+        <!-- Certificados por Mes -->
+        <div class="chart-card">
+            <h3 class="chart-title">📈 Certificados por Mes (Últimos 6 meses)</h3>
+            <div class="chart-container">
+                <canvas id="certificatesChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Consultas por Día -->
+        <div class="chart-card">
+            <h3 class="chart-title">📊 Consultas por Día (Última semana)</h3>
+            <div class="chart-container">
+                <canvas id="queriesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions-section">
+        <h2 class="section-title">⚡ Acciones Rápidas</h2>
+        <div class="quick-actions">
+            <a href="{% url 'certificates:import_excel' %}" class="action-button action-button-primary">
+                <span class="action-icon">📥</span>
+                <span class="action-text">Importar Excel</span>
+            </a>
+            <a href="{% url 'certificates:import_external' %}" class="action-button action-button-secondary">
+                <span class="action-icon">🔗</span>
+                <span class="action-text">Importar Externos</span>
+            </a>
+            <a href="{% url 'admin:certificates_certificate_changelist' %}" class="action-button action-button-info">
+                <span class="action-icon">📄</span>
+                <span class="action-text">Ver Certificados</span>
+            </a>
+            <a href="{% url 'admin:certificates_event_changelist' %}" class="action-button action-button-success">
+                <span class="action-icon">📅</span>
+                <span class="action-text">Ver Eventos</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Recent Certificates -->
+    {% if recent_certificates %}
+    <div class="recent-section">
+        <h2 class="section-title">🕒 Certificados Recientes</h2>
+        <div class="recent-list">
+            <table class="recent-table">
+                <thead>
+                    <tr>
+                        <th>UUID</th>
+                        <th>Participante</th>
+                        <th>DNI</th>
+                        <th>Evento</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cert in recent_certificates %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'admin:certificates_certificate_change' cert.id %}" class="cert-link">
+                                {{ cert.uuid|truncatechars:13 }}
+                            </a>
+                        </td>
+                        <td>{{ cert.participant.full_name }}</td>
+                        <td>{{ cert.participant.dni }}</td>
+                        <td>{{ cert.participant.event.name|truncatechars:40 }}</td>
+                        <td>
+                            {% if cert.is_external %}
+                                <span class="badge badge-external">🔗 Externo</span>
+                            {% else %}
+                                <span class="badge badge-internal">📄 Interno</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cert.is_external %}
+                                <span class="badge badge-neutral">N/A</span>
+                            {% elif cert.is_signed %}
+                                <span class="badge badge-signed">✓ Firmado</span>
+                            {% else %}
+                                <span class="badge badge-unsigned">⏳ Sin firmar</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ cert.generated_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Template Stats -->
+    {% if stats.templates.most_used or stats.templates.recent %}
+    <div class="template-stats-section">
+        <h2 class="section-title">📋 Estadísticas de Plantillas</h2>
+        <div class="template-stats-grid">
+            {% if stats.templates.most_used %}
+            <div class="template-stat-card">
+                <h3>🏆 Plantilla Más Usada</h3>
+                <p class="template-name">{{ stats.templates.most_used.name }}</p>
+                <p class="template-usage">{{ stats.templates.most_used.usage_count }} certificados generados</p>
+            </div>
+            {% endif %}
+            
+            {% if stats.templates.recent %}
+            <div class="template-stat-card">
+                <h3>🆕 Plantillas Recientes</h3>
+                <ul class="template-list">
+                    {% for template in stats.templates.recent %}
+                    <li>
+                        <span class="template-name">{{ template.name }}</span>
+                        <span class="template-date">{{ template.created_at }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extrajs %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{% static 'admin/js/dashboard.js' %}"></script>
+    <script>
+        // Pasar datos de Django a JavaScript de forma segura
+        const dashboardData = {
+            certificates: {
+                byMonth: {{ stats.certificates.by_month|default:"[]"|safe }}
+            },
+            queries: {
+                byDay: {{ stats.queries.by_day|default:"[]"|safe }}
+            }
+        };
+        
+        // Inicializar dashboard cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initDashboard === 'function') {
+                initDashboard(dashboardData);
+            } else {
+                console.error('initDashboard function not found');
+            }
+        });
+    </script>
+{% endblock %}
