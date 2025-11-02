@@ -1,27 +1,51 @@
 # Git
 .git
 .gitignore
+README.md
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
 
 # Python
 __pycache__
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-env/
-venv/
-ENV/
-.venv
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
 
 # Django
 *.log
+local_settings.py
 db.sqlite3
 db.sqlite3-journal
-/media
-/staticfiles
-*.pot
+media/
+staticfiles/
 
-# IDEs
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -30,23 +54,36 @@ db.sqlite3-journal
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
+# Documentation
+docs/_build/
+docs/build/
 
-# Documentación
-*.md
-docs/
-
-# Tests
+# Testing
+.pytest_cache/
 .coverage
 htmlcov/
-.pytest_cache/
 
-# Otros
-.env
+# Backup files
 *.bak
+*.backup
+backup_*
+
+# Logs
+logs/
+*.log
+
+# Node modules (si los hay)
+node_modules/
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
 *.tmp

@@ -1,0 +1,188 @@
+# Docker Compose para Producción - Sistema de Certificados DRTC
+version: '3.8'
+
+services:
+  # Aplicación Django
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: certificados_web_prod
+    restart: unless-stopped
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+    env_file:
+      - .env.production
+    volumes:
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: certificados_db_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-certificados_prod}
+      POSTGRES_USER: ${DB_USER:-certificados_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=es_PE.UTF-8 --lc-ctype=es_PE.UTF-8"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-certificados_user} -d ${DB_NAME:-certificados_prod}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Configuración de seguridad para producción
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c max_connections=100
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+
+  # Redis para cache y sesiones
+  redis:
+    image: redis:7-alpine
+    container_name: certificados_redis_prod
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: certificados_nginx_prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./staticfiles:/app/staticfiles:ro
+      - ./media:/app/media:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Servicio de backup automático
+  backup:
+    image: postgres:15-alpine
+    container_name: certificados_backup_prod
+    restart: "no"
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts:ro
+    networks:
+      - certificados_network
+    profiles:
+      - backup
+    command: >
+      sh -c '
+        echo "Iniciando servicio de backup automático..."
+        while true; do
+          echo "Ejecutando backup: $$(date)"
+          pg_dump -h db -U ${DB_USER:-certificados_user} -d ${DB_NAME:-certificados_prod} > /backups/auto_backup_$$(date +%Y%m%d_%H%M%S).sql
+          
+          # Comprimir backup
+          gzip /backups/auto_backup_$$(date +%Y%m%d_%H%M%S).sql
+          
+          # Limpiar backups antiguos (mantener últimos 30 días)
+          find /backups -name "auto_backup_*.sql.gz" -mtime +30 -delete
+          
+          echo "Backup completado. Próximo backup en 24 horas."
+          sleep 86400
+        done
+      '
+
+  # Servicio de monitoreo (opcional)
+  monitoring:
+    image: prom/node-exporter:latest
+    container_name: certificados_monitoring
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - certificados_network
+    profiles:
+      - monitoring
+
+# Volúmenes nombrados para persistencia
+volumes:
+  postgres_data_prod:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/docker/volumes/certificados_postgres_data
+  redis_data_prod:
+    driver: local
+
+# Red personalizada con configuración de producción
+networks:
+  certificados_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: br-certificados

@@ -1,0 +1,111 @@
+# Docker Compose para Desarrollo - Sistema de Certificados DRTC
+version: '3.8'
+
+services:
+  # Aplicación Django
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: certificados_web_dev
+    restart: unless-stopped
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.base
+      - DEBUG=True
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=certificados_dev
+      - DB_USER=certificados_user
+      - DB_PASSWORD=certificados_pass
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - media_files:/app/media
+      - static_files:/app/staticfiles
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - certificados_network
+    command: python manage.py runserver 0.0.0.0:8000
+
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: certificados_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: certificados_dev
+      POSTGRES_USER: certificados_user
+      POSTGRES_PASSWORD: certificados_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=es_PE.UTF-8 --lc-ctype=es_PE.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U certificados_user -d certificados_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para cache y sesiones
+  redis:
+    image: redis:7-alpine
+    container_name: certificados_redis_dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer para administración de BD (opcional)
+  adminer:
+    image: adminer:latest
+    container_name: certificados_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      - db
+    networks:
+      - certificados_network
+    profiles:
+      - admin
+
+# Volúmenes nombrados para persistencia
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+  media_files:
+    driver: local
+  static_files:
+    driver: local
+
+# Red personalizada
+networks:
+  certificados_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
