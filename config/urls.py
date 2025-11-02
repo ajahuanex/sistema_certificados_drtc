@@ -29,6 +29,9 @@ urlpatterns = [
     
     # Django Admin
     path("admin/", admin.site.urls),
+    
+    # API REST para editor de plantillas
+    path("api/", include("certificates.api_urls")),
 ]
 
 # Servir archivos media en desarrollo

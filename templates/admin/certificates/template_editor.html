@@ -1,0 +1,353 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Editor de Plantillas - {{ template.name|default:"Nueva Plantilla" }}{% endblock %}
+
+{% block extrahead %}
+    <link rel="stylesheet" href="{% static 'admin/css/template_editor.css' %}">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Fabric.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="template-editor-container">
+    <!-- Header con controles principales -->
+    <div class="editor-header">
+        <div class="header-left">
+            <h1>
+                <span class="icon">🎨</span>
+                Editor de Plantillas
+            </h1>
+            <div class="template-info">
+                <input type="text" id="template-name" value="{{ template.name|default:'Nueva Plantilla' }}" 
+                       placeholder="Nombre de la plantilla" class="template-name-input">
+                <span class="template-status" id="save-status">Guardado</span>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="undo-btn" title="Deshacer (Ctrl+Z)">
+                <span class="icon">↶</span> Deshacer
+            </button>
+            <button class="btn btn-secondary" id="redo-btn" title="Rehacer (Ctrl+Y)">
+                <span class="icon">↷</span> Rehacer
+            </button>
+            <button class="btn btn-info" id="preview-btn" title="Vista Previa">
+                <span class="icon">👁</span> Vista Previa
+            </button>
+            <button class="btn btn-success" id="save-btn" title="Guardar (Ctrl+S)">
+                <span class="icon">💾</span> Guardar
+            </button>
+            <button class="btn btn-primary" id="export-btn" title="Exportar Plantilla">
+                <span class="icon">📤</span> Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenido principal del editor -->
+    <div class="editor-content">
+        <!-- Panel lateral izquierdo - Herramientas -->
+        <div class="sidebar sidebar-left">
+            <div class="sidebar-header">
+                <h3>Herramientas</h3>
+            </div>
+            
+            <!-- Elementos -->
+            <div class="tool-section">
+                <h4>Elementos</h4>
+                <div class="tool-grid">
+                    <button class="tool-btn" data-tool="text" title="Agregar Texto">
+                        <span class="icon">📝</span>
+                        <span class="label">Texto</span>
+                    </button>
+                    <button class="tool-btn" data-tool="image" title="Agregar Imagen">
+                        <span class="icon">🖼</span>
+                        <span class="label">Imagen</span>
+                    </button>
+                    <button class="tool-btn" data-tool="qr" title="Agregar Código QR">
+                        <span class="icon">⚏</span>
+                        <span class="label">QR</span>
+                    </button>
+                    <button class="tool-btn" data-tool="latex" title="Agregar Fórmula LaTeX">
+                        <span class="icon">∑</span>
+                        <span class="label">LaTeX</span>
+                    </button>
+                    <button class="tool-btn" data-tool="variable" title="Agregar Variable">
+                        <span class="icon">🏷</span>
+                        <span class="label">Variable</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Variables disponibles -->
+            <div class="tool-section">
+                <h4>Variables</h4>
+                <div class="variables-list" id="variables-list">
+                    <div class="variable-item" data-variable="participant_name">
+                        <span class="var-name">{{participant_name}}</span>
+                        <span class="var-desc">Nombre del Participante</span>
+                    </div>
+                    <div class="variable-item" data-variable="participant_dni">
+                        <span class="var-name">{{participant_dni}}</span>
+                        <span class="var-desc">DNI del Participante</span>
+                    </div>
+                    <div class="variable-item" data-variable="event_name">
+                        <span class="var-name">{{event_name}}</span>
+                        <span class="var-desc">Nombre del Evento</span>
+                    </div>
+                    <div class="variable-item" data-variable="event_date">
+                        <span class="var-name">{{event_date}}</span>
+                        <span class="var-desc">Fecha del Evento</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biblioteca de Assets -->
+            <div class="tool-section">
+                <h4>Biblioteca</h4>
+                <div class="asset-controls">
+                    <input type="file" id="upload-asset" accept="image/*" style="display: none;">
+                    <button class="btn btn-sm btn-primary" onclick="document.getElementById('upload-asset').click()">
+                        <span class="icon">📁</span> Subir Asset
+                    </button>
+                </div>
+                <div class="asset-categories">
+                    <select id="asset-category-filter">
+                        <option value="">Todas las categorías</option>
+                        <option value="LOGO">Logos</option>
+                        <option value="SIGNATURE">Firmas</option>
+                        <option value="SEAL">Sellos</option>
+                        <option value="BACKGROUND">Fondos</option>
+                    </select>
+                </div>
+                <div class="assets-grid" id="assets-grid">
+                    <!-- Assets se cargan dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas central -->
+        <div class="canvas-container">
+            <div class="canvas-toolbar">
+                <div class="canvas-info">
+                    <span>Canvas: <span id="canvas-dimensions">842 × 595 px</span></span>
+                    <span>Zoom: <span id="zoom-level">100%</span></span>
+                </div>
+                <div class="canvas-controls">
+                    <button class="btn btn-sm" id="zoom-out" title="Alejar">-</button>
+                    <button class="btn btn-sm" id="zoom-reset" title="Zoom 100%">100%</button>
+                    <button class="btn btn-sm" id="zoom-in" title="Acercar">+</button>
+                    <button class="btn btn-sm" id="grid-toggle" title="Mostrar/Ocultar Grilla">⊞</button>
+                </div>
+            </div>
+            
+            <div class="canvas-wrapper" id="canvas-wrapper">
+                <canvas id="template-canvas" width="842" height="595"></canvas>
+                <div class="canvas-background" id="canvas-background"></div>
+            </div>
+        </div>
+
+        <!-- Panel lateral derecho - Propiedades -->
+        <div class="sidebar sidebar-right">
+            <div class="sidebar-header">
+                <h3>Propiedades</h3>
+            </div>
+
+            <!-- Propiedades del elemento seleccionado -->
+            <div class="properties-panel" id="properties-panel">
+                <div class="no-selection">
+                    <p>Selecciona un elemento para ver sus propiedades</p>
+                </div>
+            </div>
+
+            <!-- Panel de capas -->
+            <div class="layers-panel">
+                <h4>Capas</h4>
+                <div class="layers-list" id="layers-list">
+                    <!-- Capas se generan dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Configuración de la plantilla -->
+            <div class="template-config">
+                <h4>Configuración</h4>
+                <div class="config-group">
+                    <label>Tamaño del Canvas</label>
+                    <div class="canvas-size-selector">
+                        <select id="canvas-preset" class="form-select mb-2">
+                            <option value="custom">Personalizado</option>
+                            <option value="a4_horizontal" selected>A4 Horizontal (842×595)</option>
+                            <option value="a4_vertical">A4 Vertical (595×842)</option>
+                            <option value="carta_horizontal">Carta Horizontal (792×612)</option>
+                            <option value="carta_vertical">Carta Vertical (612×792)</option>
+                            <option value="cuadrado">Cuadrado (800×800)</option>
+                            <option value="panoramico">Panorámico (1200×600)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="canvas-width" value="842" min="100" max="5000" class="form-control">
+                        <span class="input-group-text">×</span>
+                        <input type="number" id="canvas-height" value="595" min="100" max="5000" class="form-control">
+                        <span class="input-group-text">px</span>
+                    </div>
+                    <small class="text-muted">
+                        <strong>A4 Horizontal:</strong> Ideal para certificados<br>
+                        <strong>A4 Vertical:</strong> Ideal para diplomas
+                    </small>
+                </div>
+                
+                <div class="config-group">
+                    <label>Imagen de Fondo</label>
+                    <div class="background-controls">
+                        <select id="background-asset">
+                            <option value="">Sin fondo</option>
+                        </select>
+                        <button class="btn btn-sm" id="upload-background">Subir</button>
+                    </div>
+                </div>
+                
+                <div class="config-group">
+                    <label>Acciones</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <a href="{% url 'admin:certificates_certificatetemplate_changelist' %}" 
+                           class="btn btn-sm btn-secondary">
+                            ← Volver al Admin
+                        </a>
+                        {% if template %}
+                        <a href="{% url 'admin:certificates_certificatetemplate_change' template.id %}" 
+                           class="btn btn-sm btn-info">
+                            Editar en Admin Clásico
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+<!-- Modal de Vista Previa -->
+<div class="modal fade" id="preview-modal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vista Previa del Certificado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-controls">
+                    <label>Datos de Prueba:</label>
+                    <select id="test-data-select">
+                        <option value="default">Datos por Defecto</option>
+                        <option value="custom">Personalizar...</option>
+                    </select>
+                    <button class="btn btn-primary" id="generate-preview">Generar Vista Previa</button>
+                </div>
+                <div class="preview-content" id="preview-content">
+                    <!-- Vista previa se carga aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Propiedades de Texto -->
+<div class="modal fade" id="text-properties-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Propiedades de Texto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Contenido</label>
+                    <textarea id="text-content" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fuente</label>
+                    <select id="text-font" class="form-control">
+                        <option value="Arial">Arial</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Georgia">Georgia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tamaño</label>
+                    <input type="number" id="text-size" class="form-control" min="8" max="200" value="16">
+                </div>
+                <div class="form-group">
+                    <label>Color</label>
+                    <input type="color" id="text-color" class="form-control" value="#000000">
+                </div>
+                <div class="form-group">
+                    <label>Alineación</label>
+                    <select id="text-align" class="form-control">
+                        <option value="left">Izquierda</option>
+                        <option value="center">Centro</option>
+                        <option value="right">Derecha</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="apply-text-properties">Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de LaTeX -->
+<div class="modal fade" id="latex-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editor de Fórmulas LaTeX</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Código LaTeX</label>
+                    <textarea id="latex-code" class="form-control" rows="4" placeholder="Ej: E = mc^2"></textarea>
+                    <small class="form-text text-muted">
+                        Usa $ para fórmulas inline: $E = mc^2$<br>
+                        Usa $$ para fórmulas display: $$\int_0^1 x^2 dx$$
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>Vista Previa</label>
+                    <div id="latex-preview" class="latex-preview-box">
+                        <!-- Vista previa de LaTeX -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="apply-latex">Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    // Configuración global
+    window.TEMPLATE_EDITOR_CONFIG = {
+        templateId: {{ template.id|default:'null' }},
+        apiBaseUrl: '/api/',
+        csrfToken: '{{ csrf_token }}',
+        canvasWidth: {{ template.canvas_width|default:842 }},
+        canvasHeight: {{ template.canvas_height|default:595 }}
+    };
+</script>
+<script src="{% static 'admin/js/template_editor.js' %}"></script>
+{% endblock %}

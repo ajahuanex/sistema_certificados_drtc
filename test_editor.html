@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🧪 Test Editor de Plantillas</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Selector de Tamaños</h3>
+                <select id="canvas-preset" class="form-select mb-2">
+                    <option value="custom">Personalizado</option>
+                    <option value="a4_horizontal" selected>A4 Horizontal (842×595)</option>
+                    <option value="a4_vertical">A4 Vertical (595×842)</option>
+                    <option value="carta_horizontal">Carta Horizontal (792×612)</option>
+                    <option value="carta_vertical">Carta Vertical (612×792)</option>
+                    <option value="cuadrado">Cuadrado (800×800)</option>
+                    <option value="panoramico">Panorámico (1200×600)</option>
+                </select>
+                
+                <div class="input-group">
+                    <input type="number" id="canvas-width" value="842" min="100" max="5000" class="form-control">
+                    <span class="input-group-text">×</span>
+                    <input type="number" id="canvas-height" value="595" min="100" max="5000" class="form-control">
+                    <span class="input-group-text">px</span>
+                </div>
+                
+                <small class="text-muted">
+                    <strong>A4 Horizontal:</strong> Ideal para certificados<br>
+                    <strong>A4 Vertical:</strong> Ideal para diplomas
+                </small>
+            </div>
+            
+            <div class="col-md-6">
+                <h3>Test API</h3>
+                <button id="test-api" class="btn btn-primary">Test API Create</button>
+                <div id="api-result" class="mt-2"></div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Canvas Preview</h3>
+                <div id="canvas-info" class="alert alert-info">
+                    Canvas: <span id="canvas-dimensions">842 × 595 px</span>
+                </div>
+                <div style="border: 2px solid #ccc; background: white; margin: 20px 0;">
+                    <div id="canvas-preview" style="width: 842px; height: 595px; background: #f8f9fa; position: relative; transform: scale(0.5); transform-origin: top left;">
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                            <h2>Vista Previa del Canvas</h2>
+                            <p>Tamaño: <span id="preview-size">842 × 595 px</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Presets de tamaño
+        const presets = {
+            'a4_horizontal': { width: 842, height: 595, name: 'A4 Horizontal' },
+            'a4_vertical': { width: 595, height: 842, name: 'A4 Vertical' },
+            'carta_horizontal': { width: 792, height: 612, name: 'Carta Horizontal' },
+            'carta_vertical': { width: 612, height: 792, name: 'Carta Vertical' },
+            'cuadrado': { width: 800, height: 800, name: 'Cuadrado' },
+            'panoramico': { width: 1200, height: 600, name: 'Panorámico' }
+        };
+        
+        // Event listeners
+        document.getElementById('canvas-preset').addEventListener('change', function(e) {
+            const preset = e.target.value;
+            if (preset !== 'custom' && presets[preset]) {
+                const size = presets[preset];
+                updateCanvasSize(size.width, size.height);
+                showMessage(`Canvas cambiado a ${size.name} (${size.width}×${size.height}px)`, 'success');
+            }
+        });
+        
+        document.getElementById('canvas-width').addEventListener('change', function(e) {
+            updateCanvasSize(parseInt(e.target.value), null);
+        });
+        
+        document.getElementById('canvas-height').addEventListener('change', function(e) {
+            updateCanvasSize(null, parseInt(e.target.value));
+        });
+        
+        document.getElementById('test-api').addEventListener('click', testAPI);
+        
+        function updateCanvasSize(width, height) {
+            const widthInput = document.getElementById('canvas-width');
+            const heightInput = document.getElementById('canvas-height');
+            const preview = document.getElementById('canvas-preview');
+            const dimensions = document.getElementById('canvas-dimensions');
+            const previewSize = document.getElementById('preview-size');
+            
+            if (width) widthInput.value = width;
+            if (height) heightInput.value = height;
+            
+            const currentWidth = parseInt(widthInput.value);
+            const currentHeight = parseInt(heightInput.value);
+            
+            // Actualizar preview
+            preview.style.width = currentWidth + 'px';
+            preview.style.height = currentHeight + 'px';
+            
+            // Actualizar textos
+            dimensions.textContent = `${currentWidth} × ${currentHeight} px`;
+            previewSize.textContent = `${currentWidth} × ${currentHeight} px`;
+            
+            // Actualizar preset selector
+            updatePresetSelector(currentWidth, currentHeight);
+        }
+        
+        function updatePresetSelector(width, height) {
+            const selector = document.getElementById('canvas-preset');
+            let matchedPreset = 'custom';
+            
+            for (const [key, preset] of Object.entries(presets)) {
+                if (preset.width === width && preset.height === height) {
+                    matchedPreset = key;
+                    break;
+                }
+            }
+            
+            selector.value = matchedPreset;
+        }
+        
+        function showMessage(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.insertBefore(alert, document.body.firstChild);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 3000);
+        }
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Testing API...';
+            
+            try {
+                const response = await fetch('/api/templates/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Template from HTML',
+                        canvas_width: 842,
+                        canvas_height: 595
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    resultDiv.innerHTML = `<div class="alert alert-success">✅ API works! Template ID: ${result.id}</div>`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ API Error (${response.status}): ${error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Inicializar
+        showMessage('🎉 Test page loaded successfully!', 'info');
+    </script>
+</body>
+</html>

@@ -70,7 +70,71 @@ class CertificateGeneratorService:
         self, context_data: dict, template_obj, qr_buffer: BytesIO = None
     ) -> bytes:
         """
-        Crea un PDF simple con los datos del certificado
+        Crea un PDF usando la plantilla visual o fallback al método simple
+
+        Args:
+            context_data: Datos del participante
+            template_obj: Objeto CertificateTemplate
+            qr_buffer: Buffer con imagen QR (opcional)
+
+        Returns:
+            Bytes del PDF generado
+        """
+        # Verificar si la plantilla tiene elementos visuales
+        if hasattr(template_obj, 'elements') and template_obj.elements.exists():
+            # Usar el nuevo sistema de renderizado visual
+            return self._create_visual_pdf(context_data, template_obj, qr_buffer)
+        else:
+            # Usar el método simple original para compatibilidad
+            return self._create_simple_pdf(context_data, template_obj, qr_buffer)
+
+    def _create_visual_pdf(
+        self, context_data: dict, template_obj, qr_buffer: BytesIO = None
+    ) -> bytes:
+        """
+        Crea un PDF usando el sistema de plantillas visuales
+
+        Args:
+            context_data: Datos del participante
+            template_obj: Objeto CertificateTemplate
+            qr_buffer: Buffer con imagen QR (opcional)
+
+        Returns:
+            Bytes del PDF generado
+        """
+        try:
+            from certificates.services.template_renderer import TemplateRenderingService
+        except ImportError:
+            logger.warning("WeasyPrint not available, falling back to simple PDF generation")
+            return self._create_simple_pdf(context_data, template_obj, qr_buffer)
+        
+        # Mapear datos del contexto al formato esperado por el renderer
+        participant_data = {
+            'participant_name': context_data.get('full_name', ''),
+            'participant_dni': context_data.get('dni', ''),
+            'event_name': context_data.get('event_name', ''),
+            'event_date': context_data.get('event_date', ''),
+            'attendee_type': context_data.get('attendee_type', ''),
+            'certificate_uuid': context_data.get('certificate_uuid', ''),
+            'verification_url': context_data.get('verification_url', ''),
+        }
+        
+        try:
+            # Usar el servicio de renderizado visual
+            renderer = TemplateRenderingService()
+            pdf_bytes = renderer.render_template_to_pdf(template_obj.id, participant_data)
+            
+            logger.info(f"PDF visual generado: {len(pdf_bytes)} bytes")
+            return pdf_bytes
+        except ImportError:
+            logger.warning("WeasyPrint dependencies not available, falling back to simple PDF")
+            return self._create_simple_pdf(context_data, template_obj, qr_buffer)
+
+    def _create_simple_pdf(
+        self, context_data: dict, template_obj, qr_buffer: BytesIO = None
+    ) -> bytes:
+        """
+        Crea un PDF simple con los datos del certificado (método original)
 
         Args:
             context_data: Datos del participante
@@ -175,7 +239,7 @@ class CertificateGeneratorService:
         pdf_buffer.seek(0)
         pdf_bytes = pdf_buffer.read()
 
-        logger.info(f"PDF generado: {len(pdf_bytes)} bytes")
+        logger.info(f"PDF simple generado: {len(pdf_bytes)} bytes")
 
         return pdf_bytes
 
@@ -217,6 +281,8 @@ class CertificateGeneratorService:
             "event_name": participant.event.name,
             "event_date": participant.event.event_date.strftime("%d/%m/%Y"),
             "attendee_type": participant.attendee_type,
+            "certificate_uuid": str(cert_uuid),
+            "verification_url": self.qr_service.get_verification_url(str(cert_uuid)),
         }
 
         # Generar PDF

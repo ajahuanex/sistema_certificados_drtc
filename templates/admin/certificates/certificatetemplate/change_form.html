@@ -1,0 +1,45 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block submit_buttons_bottom %}
+    <div class="submit-row">
+        {% if show_save %}<input type="submit" value="{% trans 'Save' %}" class="default" name="_save">{% endif %}
+        {% if show_delete_link %}
+            {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
+            <p class="deletelink-box"><a href="{{ delete_url }}" class="deletelink">{% trans "Delete" %}</a></p>
+        {% endif %}
+        {% if show_save_as_new %}<input type="submit" value="{% trans 'Save as new' %}" name="_saveasnew">{% endif %}
+        {% if show_save_and_add_another %}<input type="submit" value="{% trans 'Save and add another' %}" name="_addanother">{% endif %}
+        {% if show_save_and_continue %}<input type="submit" value="{% trans 'Save and continue editing' %}" name="_continue">{% endif %}
+        
+        <!-- Botón del Editor Visual -->
+        {% if original %}
+        <input type="submit" value="🎨 Abrir Editor Visual" name="_visual_editor" class="default" 
+               style="background-color: #007bff; border-color: #007bff; margin-left: 10px;">
+        {% else %}
+        <input type="submit" value="🎨 Crear con Editor Visual" name="_visual_editor" class="default" 
+               style="background-color: #28a745; border-color: #28a745; margin-left: 10px;">
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .submit-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .submit-row input[name="_visual_editor"] {
+            color: white;
+            font-weight: bold;
+        }
+        
+        .submit-row input[name="_visual_editor"]:hover {
+            opacity: 0.9;
+        }
+    </style>
+{% endblock %}

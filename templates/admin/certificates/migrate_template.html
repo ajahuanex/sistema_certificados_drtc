@@ -1,0 +1,136 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:certificates_certificatetemplate_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module aligned">
+    <h1>{{ title }}</h1>
+    
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Información de la Plantilla</h2>
+            <p><strong>Nombre:</strong> {{ template.name }}</p>
+            <p><strong>ID:</strong> {{ template.id }}</p>
+            <p><strong>Elementos actuales:</strong> {{ template.elements.count }}</p>
+            <p><strong>Creada:</strong> {{ template.created_at }}</p>
+        </div>
+    </div>
+
+    {% if preview_result.success %}
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Preview de Migración</h2>
+            <p><strong>Total de elementos a crear:</strong> {{ preview_result.total_elements }}</p>
+            
+            <ul>
+                <li><strong>Variables:</strong> {{ preview_result.elements_by_type.variables }}</li>
+                <li><strong>Texto:</strong> {{ preview_result.elements_by_type.text }}</li>
+                <li><strong>Imágenes:</strong> {{ preview_result.elements_by_type.images }}</li>
+            </ul>
+            
+            {% if preview_result.elements_preview %}
+            <h3>Elementos que se crearán:</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Nombre</th>
+                        <th>Contenido</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for element in preview_result.elements_preview %}
+                    <tr>
+                        <td>
+                            {% if element.type == 'VARIABLE' %}
+                                <span class="badge" style="background-color: #007bff;">Variable</span>
+                            {% elif element.type == 'TEXT' %}
+                                <span class="badge" style="background-color: #28a745;">Texto</span>
+                            {% elif element.type == 'IMAGE' %}
+                                <span class="badge" style="background-color: #ffc107; color: #000;">Imagen</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ element.name }}</td>
+                        <td><code>{{ element.content|truncatechars:80 }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Confirmar Migración</h2>
+            <p>Esta acción:</p>
+            <ul>
+                <li>✓ Creará {{ preview_result.total_elements }} elementos visuales</li>
+                <li>✓ Preservará el HTML original como comentario</li>
+                <li>✓ Configurará la plantilla para el editor visual</li>
+                <li>⚠ No se puede deshacer fácilmente</li>
+            </ul>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="submit-row">
+                    <input type="submit" value="Migrar Plantilla" class="default" style="background-color: #28a745;" />
+                    <a href="{% url 'admin:certificates_certificatetemplate_changelist' %}" class="button cancel-link">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Error en Preview</h2>
+            <p class="errornote">{{ preview_result.error }}</p>
+            <p><a href="{% url 'admin:certificates_certificatetemplate_changelist' %}" class="button">Volver</a></p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.table th,
+.table td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

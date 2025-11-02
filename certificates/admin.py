@@ -1,10 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.shortcuts import redirect
 from .models import (
     Event,
     Participant,
     Certificate,
     CertificateTemplate,
+    TemplateElement,
+    TemplateAsset,
     AuditLog,
     QRProcessingConfig,
 )
@@ -29,7 +32,7 @@ class EventAdmin(BaseAdmin):
     list_display = [
         "name",
         "event_date",
-        "template",
+        "template_info",
         "participant_count",
         "created_at",
     ]
@@ -38,6 +41,19 @@ class EventAdmin(BaseAdmin):
     date_hierarchy = "event_date"
     ordering = ["-event_date"]
     actions = ["generate_certificates_action"]
+
+    def template_info(self, obj):
+        """Muestra información de la plantilla"""
+        if obj.template:
+            template_type = "🎨 Visual" if obj.template.elements.exists() else "📝 HTML"
+            return format_html(
+                '<strong>{}</strong><br><small>{}</small>',
+                obj.template.name,
+                template_type
+            )
+        return format_html('<em style="color: #999;">Sin plantilla</em>')
+    
+    template_info.short_description = "Plantilla"
 
     def participant_count(self, obj):
         """Muestra el número de participantes"""
@@ -366,11 +382,11 @@ class CertificateAdmin(BaseAdmin):
     def changelist_view(self, request, extra_context=None):
         """Agrega contexto adicional a la vista de lista"""
         extra_context = extra_context or {}
-        extra_context['import_external_url'] = '/admin/import-external/'
-        extra_context['import_excel_url'] = '/admin/import-excel/'
-        extra_context['pdf_import_url'] = '/admin/pdf-import/'
-        extra_context['final_import_url'] = '/admin/final-import/'
-        extra_context['processing_status_url'] = '/admin/processing-status/'
+        
+        # Contar plantillas que pueden migrarse
+        templates_to_migrate = CertificateTemplate.objects.filter(elements__isnull=True).distinct().count()
+        extra_context['templates_to_migrate'] = templates_to_migrate
+        
         return super().changelist_view(request, extra_context=extra_context)
 
 
@@ -378,7 +394,7 @@ class CertificateAdmin(BaseAdmin):
 class CertificateTemplateAdmin(BaseAdmin):
     """Administración de plantillas de certificados"""
 
-    list_display = ["name", "is_default", "preview_link", "created_at", "updated_at"]
+    list_display = ["name", "is_default", "template_type", "editor_actions", "preview_link", "created_at", "updated_at"]
     list_filter = ["is_default", "created_at"]
     search_fields = ["name"]
     ordering = ["-created_at"]
@@ -387,6 +403,10 @@ class CertificateTemplateAdmin(BaseAdmin):
     fieldsets = (
         ('Información Básica', {
             'fields': ('name', 'is_default')
+        }),
+        ('Dimensiones del Canvas', {
+            'fields': ('canvas_width', 'canvas_height'),
+            'description': 'A4 Horizontal: 842×595px | A4 Vertical: 595×842px | Carta: 792×612px'
         }),
         ('Plantilla HTML', {
             'fields': ('html_template',),
@@ -402,6 +422,42 @@ class CertificateTemplateAdmin(BaseAdmin):
         }),
     )
     
+    def template_type(self, obj):
+        """Muestra el tipo de plantilla (visual o HTML)"""
+        if hasattr(obj, 'elements') and obj.elements.exists():
+            return format_html(
+                '<span style="color: #28a745; font-weight: bold;">🎨 Visual</span>'
+            )
+        return format_html(
+            '<span style="color: #6c757d;">📝 HTML</span>'
+        )
+    template_type.short_description = "Tipo"
+
+    def editor_actions(self, obj):
+        """Enlaces para editar la plantilla"""
+        from django.urls import reverse
+        
+        # Link al editor visual
+        visual_editor_url = reverse('certificates:template_editor', args=[obj.pk])
+        
+        # Link al admin normal
+        admin_edit_url = reverse('admin:certificates_certificatetemplate_change', args=[obj.pk])
+        
+        # Link de migración si no tiene elementos visuales
+        migrate_button = ''
+        if not obj.elements.exists():
+            migrate_url = reverse('admin:certificates_certificatetemplate_migrate', args=[obj.pk])
+            migrate_button = f'<a href="{migrate_url}" class="button" style="margin-right: 5px; background-color: #ffc107; color: #000;">🔄 Migrar</a>'
+        
+        return format_html(
+            '{}<a href="{}" class="button" style="margin-right: 5px;">🎨 Editor Visual</a>'
+            '<a href="{}" class="button">✏️ Editar HTML</a>',
+            migrate_button,
+            visual_editor_url,
+            admin_edit_url
+        )
+    editor_actions.short_description = "Editar"
+
     def preview_link(self, obj):
         """Enlace para previsualizar la plantilla"""
         from django.urls import reverse
@@ -410,7 +466,7 @@ class CertificateTemplateAdmin(BaseAdmin):
             '<a href="{}" target="_blank" class="button">👁️ Vista Previa</a>',
             url
         )
-    preview_link.short_description = "Acciones"
+    preview_link.short_description = "Vista Previa"
     
     def preview_button(self, obj):
         """Botón de preview en el formulario de edición"""
@@ -425,7 +481,7 @@ class CertificateTemplateAdmin(BaseAdmin):
     preview_button.short_description = "Vista Previa"
     
     def get_urls(self):
-        """Agregar URL personalizada para preview"""
+        """Agregar URLs personalizadas"""
         from django.urls import path
         urls = super().get_urls()
         custom_urls = [
@@ -433,6 +489,16 @@ class CertificateTemplateAdmin(BaseAdmin):
                 '<int:template_id>/preview/',
                 self.admin_site.admin_view(self.preview_template),
                 name='certificates_certificatetemplate_preview',
+            ),
+            path(
+                '<int:template_id>/migrate/',
+                self.admin_site.admin_view(self.migrate_template),
+                name='certificates_certificatetemplate_migrate',
+            ),
+            path(
+                'migrate-all/',
+                self.admin_site.admin_view(self.migrate_all_templates),
+                name='certificates_certificatetemplate_migrate_all',
             ),
         ]
         return custom_urls + urls
@@ -544,6 +610,98 @@ class CertificateTemplateAdmin(BaseAdmin):
             </html>
             """
             return HttpResponse(error_html, status=500)
+    
+    def migrate_template(self, request, template_id):
+        """Vista para migrar una plantilla individual al formato visual"""
+        from django.shortcuts import get_object_or_404, redirect
+        from django.contrib import messages
+        from certificates.services.template_migration import TemplateMigrationService
+        
+        template = get_object_or_404(CertificateTemplate, pk=template_id)
+        
+        if request.method == 'POST':
+            # Realizar migración
+            service = TemplateMigrationService()
+            result = service.migrate_template(template_id, preserve_original=True)
+            
+            if result['success']:
+                messages.success(
+                    request,
+                    f'✓ Plantilla "{template.name}" migrada exitosamente con {result["elements_created"]} elementos'
+                )
+            else:
+                messages.error(
+                    request,
+                    f'✗ Error migrando plantilla: {result["error"]}'
+                )
+            
+            return redirect('admin:certificates_certificatetemplate_changelist')
+        
+        # Mostrar preview de migración
+        service = TemplateMigrationService()
+        preview_result = service.preview_migration(template_id)
+        
+        context = {
+            'title': f'Migrar Plantilla: {template.name}',
+            'template': template,
+            'preview_result': preview_result,
+            'opts': CertificateTemplate._meta,
+        }
+        
+        return render(request, 'admin/certificates/migrate_template.html', context)
+    
+    def migrate_all_templates(self, request):
+        """Vista para migrar todas las plantillas al formato visual"""
+        from django.shortcuts import redirect
+        from django.contrib import messages
+        from certificates.services.template_migration import TemplateMigrationService
+        
+        if request.method == 'POST':
+            # Realizar migración masiva
+            service = TemplateMigrationService()
+            results = service.migrate_all_templates(exclude_with_elements=True)
+            
+            if results['migrated_successfully'] > 0:
+                messages.success(
+                    request,
+                    f'✓ {results["migrated_successfully"]} plantillas migradas exitosamente'
+                )
+            
+            if results['migration_errors'] > 0:
+                messages.warning(
+                    request,
+                    f'⚠ {results["migration_errors"]} plantillas tuvieron errores'
+                )
+                
+                # Mostrar algunos errores
+                for error in results['errors'][:3]:
+                    messages.error(
+                        request,
+                        f'Error en "{error["template_name"]}": {error["error"]}'
+                    )
+            
+            return redirect('admin:certificates_certificatetemplate_changelist')
+        
+        # Mostrar preview de migración masiva
+        service = TemplateMigrationService()
+        templates = CertificateTemplate.objects.filter(elements__isnull=True).distinct()
+        
+        preview_results = []
+        for template in templates[:10]:  # Mostrar solo los primeros 10
+            preview = service.preview_migration(template.id)
+            preview_results.append({
+                'template': template,
+                'preview': preview
+            })
+        
+        context = {
+            'title': 'Migrar Todas las Plantillas',
+            'total_templates': templates.count(),
+            'preview_results': preview_results,
+            'opts': CertificateTemplate._meta,
+        }
+        
+        return render(request, 'admin/certificates/migrate_all_templates.html', context)
 
 
 @admin.register(AuditLog)
@@ -673,3 +831,333 @@ class QRProcessingConfigAdmin(BaseAdmin):
             if active_count <= 1:
                 return False
         return super().has_delete_permission(request, obj)
+
+
+
+# ============================================================================
+# ADMIN PARA EDITOR DE PLANTILLAS AVANZADO
+# ============================================================================
+
+class TemplateElementInline(admin.TabularInline):
+    """Inline para elementos de plantilla"""
+    model = TemplateElement
+    extra = 0
+    fields = ['name', 'element_type', 'position_x', 'position_y', 'width', 'height', 'z_index', 'is_visible']
+    readonly_fields = []
+    ordering = ['z_index']
+
+
+@admin.register(TemplateAsset)
+class TemplateAssetAdmin(BaseAdmin):
+    """Administración de assets de plantillas"""
+    
+    list_display = [
+        'name',
+        'asset_type_badge',
+        'category',
+        'preview_thumbnail',
+        'is_public_badge',
+        'created_by',
+        'created_at',
+    ]
+    list_filter = ['asset_type', 'category', 'is_public', 'created_at']
+    search_fields = ['name', 'category']
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'preview_image']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'asset_type', 'category', 'is_public')
+        }),
+        ('Archivo', {
+            'fields': ('file', 'preview_image'),
+            'description': 'Formatos permitidos: PNG, JPG, JPEG, SVG (máx 10MB)'
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def asset_type_badge(self, obj):
+        """Muestra el tipo de asset con color"""
+        colors = {
+            'BACKGROUND': '#007bff',
+            'LOGO': '#28a745',
+            'SIGNATURE': '#ffc107',
+            'SEAL': '#dc3545',
+            'ICON': '#6c757d',
+        }
+        color = colors.get(obj.asset_type, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px;">{}</span>',
+            color,
+            obj.get_asset_type_display()
+        )
+    
+    asset_type_badge.short_description = "Tipo"
+    
+    def is_public_badge(self, obj):
+        """Muestra si el asset es público"""
+        if obj.is_public:
+            return format_html(
+                '<span style="color: #28a745;">✓ Público</span>'
+            )
+        return format_html(
+            '<span style="color: #dc3545;">✗ Privado</span>'
+        )
+    
+    is_public_badge.short_description = "Visibilidad"
+    
+    def preview_thumbnail(self, obj):
+        """Muestra miniatura del asset"""
+        if obj.file:
+            return format_html(
+                '<img src="{}" style="max-width: 50px; max-height: 50px; border-radius: 4px;" />',
+                obj.file.url
+            )
+        return "-"
+    
+    preview_thumbnail.short_description = "Vista Previa"
+    
+    def preview_image(self, obj):
+        """Muestra imagen completa en el formulario"""
+        if obj.file:
+            return format_html(
+                '<img src="{}" style="max-width: 400px; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;" />',
+                obj.file.url
+            )
+        return "No hay imagen disponible"
+    
+    preview_image.short_description = "Vista Previa Completa"
+    
+    def save_model(self, request, obj, form, change):
+        """Guarda el modelo y registra quién lo creó"""
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def has_delete_permission(self, request, obj=None):
+        """Verificar si el asset está en uso antes de eliminar"""
+        if obj:
+            # Verificar si está siendo usado como fondo en alguna plantilla
+            if obj.templates_using_as_background.exists():
+                return False
+            # Verificar si está siendo usado en algún elemento
+            if obj.elements_using.exists():
+                return False
+        return super().has_delete_permission(request, obj)
+
+
+@admin.register(TemplateElement)
+class TemplateElementAdmin(BaseAdmin):
+    """Administración de elementos de plantillas"""
+    
+    list_display = [
+        'name',
+        'template',
+        'element_type_badge',
+        'position_display',
+        'size_display',
+        'z_index',
+        'is_visible_badge',
+        'is_locked_badge',
+    ]
+    list_filter = ['element_type', 'template', 'is_visible', 'is_locked']
+    search_fields = ['name', 'content', 'template__name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['template', 'z_index']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('template', 'element_type', 'name')
+        }),
+        ('Posicionamiento', {
+            'fields': (
+                ('position_x', 'position_y'),
+                ('width', 'height'),
+                'rotation',
+                'z_index'
+            ),
+            'description': 'Posición y dimensiones del elemento en el canvas'
+        }),
+        ('Contenido', {
+            'fields': ('content', 'asset', 'variables'),
+            'description': 'Contenido del elemento (texto, LaTeX, o referencia a asset)'
+        }),
+        ('Estilo', {
+            'fields': ('style_config',),
+            'description': 'Configuración de estilo en formato JSON'
+        }),
+        ('Opciones', {
+            'fields': ('is_visible', 'is_locked'),
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def element_type_badge(self, obj):
+        """Muestra el tipo de elemento con color"""
+        colors = {
+            'TEXT': '#007bff',
+            'IMAGE': '#28a745',
+            'QR': '#ffc107',
+            'LATEX': '#dc3545',
+            'VARIABLE': '#6c757d',
+        }
+        color = colors.get(obj.element_type, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px;">{}</span>',
+            color,
+            obj.get_element_type_display()
+        )
+    
+    element_type_badge.short_description = "Tipo"
+    
+    def position_display(self, obj):
+        """Muestra la posición de forma legible"""
+        return f"({obj.position_x}, {obj.position_y})"
+    
+    position_display.short_description = "Posición"
+    
+    def size_display(self, obj):
+        """Muestra el tamaño de forma legible"""
+        return f"{obj.width}×{obj.height}px"
+    
+    size_display.short_description = "Tamaño"
+    
+    def is_visible_badge(self, obj):
+        """Muestra si el elemento es visible"""
+        if obj.is_visible:
+            return format_html('<span style="color: #28a745;">✓</span>')
+        return format_html('<span style="color: #dc3545;">✗</span>')
+    
+    is_visible_badge.short_description = "Visible"
+    
+    def is_locked_badge(self, obj):
+        """Muestra si el elemento está bloqueado"""
+        if obj.is_locked:
+            return format_html('<span style="color: #ffc107;">🔒</span>')
+        return format_html('<span style="color: #28a745;">🔓</span>')
+    
+    is_locked_badge.short_description = "Bloqueado"
+
+
+# Actualizar el admin de CertificateTemplate para incluir los elementos inline
+# Primero, desregistrar el admin existente si está registrado
+try:
+    admin.site.unregister(CertificateTemplate)
+except admin.sites.NotRegistered:
+    pass
+
+@admin.register(CertificateTemplate)
+class CertificateTemplateAdmin(BaseAdmin):
+    """Administración de plantillas de certificados con editor visual"""
+    
+    list_display = [
+        'name',
+        'is_default_badge',
+        'canvas_dimensions',
+        'element_count',
+        'editor_version',
+        'last_edited_by',
+        'updated_at',
+    ]
+    list_filter = ['is_default', 'editor_version', 'updated_at']
+    search_fields = ['name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-is_default', '-updated_at']
+    inlines = [TemplateElementInline]
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'is_default')
+        }),
+        ('Plantilla HTML (Sistema Antiguo)', {
+            'fields': ('html_template', 'css_styles', 'background_image', 'field_positions'),
+            'classes': ('collapse',),
+            'description': 'Campos del sistema antiguo de plantillas HTML'
+        }),
+        ('Editor Visual', {
+            'fields': (
+                ('canvas_width', 'canvas_height'),
+                'background_asset',
+                'render_config',
+                'available_variables',
+                'editor_version',
+                'last_edited_by'
+            ),
+            'description': 'Configuración del editor visual avanzado'
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def is_default_badge(self, obj):
+        """Muestra si es la plantilla por defecto"""
+        if obj.is_default:
+            return format_html(
+                '<span style="background-color: #28a745; color: white; padding: 3px 10px; border-radius: 12px; font-weight: bold;">★ Por Defecto</span>'
+            )
+        return format_html(
+            '<span style="color: #6c757d;">-</span>'
+        )
+    
+    is_default_badge.short_description = "Estado"
+    
+    def canvas_dimensions(self, obj):
+        """Muestra las dimensiones del canvas"""
+        return f"{obj.canvas_width}×{obj.canvas_height}px"
+    
+    canvas_dimensions.short_description = "Dimensiones"
+    
+    def element_count(self, obj):
+        """Muestra el número de elementos en la plantilla"""
+        count = obj.elements.count()
+        if count > 0:
+            return format_html(
+                '<span style="background-color: #007bff; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">{}</span>',
+                count
+            )
+        return "-"
+    
+    element_count.short_description = "Elementos"
+    
+    def save_model(self, request, obj, form, change):
+        """Guarda el modelo y registra quién lo editó"""
+        obj.last_edited_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def response_add(self, request, obj, post_url_continue=None):
+        """Personaliza respuesta después de agregar"""
+        if '_visual_editor' in request.POST:
+            return redirect('certificates:template_editor', template_id=obj.id)
+        return super().response_add(request, obj, post_url_continue)
+    
+    def response_change(self, request, obj):
+        """Personaliza respuesta después de cambiar"""
+        if '_visual_editor' in request.POST:
+            return redirect('certificates:template_editor', template_id=obj.id)
+        return super().response_change(request, obj)
+    
+    def get_urls(self):
+        """Agrega URLs personalizadas"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:object_id>/visual-editor/',
+                self.admin_site.admin_view(self.visual_editor_view),
+                name='certificates_certificatetemplate_visual_editor'
+            ),
+        ]
+        return custom_urls + urls
+    
+    def visual_editor_view(self, request, object_id):
+        """Vista para abrir el editor visual"""
+        from django.shortcuts import redirect
+        return redirect('certificates:template_editor', template_id=object_id)

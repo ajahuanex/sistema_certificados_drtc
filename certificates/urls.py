@@ -1,6 +1,7 @@
 """URLs para la aplicación certificates"""
-from django.urls import path
+from django.urls import path, include
 from django.views.generic import RedirectView
+from rest_framework.routers import DefaultRouter
 from certificates.views.admin_views import (
     ExcelImportView,
     ExternalCertificateImportView,
@@ -22,10 +23,65 @@ from certificates.views.dashboard_views import (
     dashboard_view,
     dashboard_refresh
 )
+from certificates.views.template_editor_views import (
+    TemplateEditorView,
+    TemplateEditorCreateView
+)
+# Import API views conditionally to handle missing dependencies
+try:
+    from certificates.api_views import (
+        CertificateTemplateViewSet,
+        TemplateElementViewSet,
+        TemplateAssetViewSet,
+        LaTeXValidationView,
+        LaTeXRenderView,
+    )
+    API_VIEWS_AVAILABLE = True
+except ImportError as e:
+    # Create dummy views if dependencies are missing
+    from rest_framework.viewsets import ViewSet
+    from rest_framework.views import APIView
+    from rest_framework.response import Response
+    from rest_framework import status
+    
+    class CertificateTemplateViewSet(ViewSet):
+        def list(self, request):
+            return Response({'error': 'WeasyPrint not available'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
+    class TemplateElementViewSet(ViewSet):
+        def list(self, request):
+            return Response({'error': 'WeasyPrint not available'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
+    class TemplateAssetViewSet(ViewSet):
+        def list(self, request):
+            return Response({'error': 'WeasyPrint not available'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
+    class LaTeXValidationView(APIView):
+        def post(self, request):
+            return Response({'error': 'WeasyPrint not available'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
+    class LaTeXRenderView(APIView):
+        def post(self, request):
+            return Response({'error': 'WeasyPrint not available'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    
+    API_VIEWS_AVAILABLE = False
+
+# Router para las APIs REST
+router = DefaultRouter()
+router.register(r'templates', CertificateTemplateViewSet, basename='template')
+router.register(r'elements', TemplateElementViewSet, basename='element')
+router.register(r'assets', TemplateAssetViewSet, basename='asset')
 
 app_name = 'certificates'
 
 urlpatterns = [
+    # APIs REST para editor de plantillas
+    path('api/', include(router.urls)),
+    
+    # APIs específicas para LaTeX
+    path('api/latex/validate/', LaTeXValidationView.as_view(), name='latex-validate'),
+    path('api/latex/render/', LaTeXRenderView.as_view(), name='latex-render'),
+    
     # Página principal - redirige a consulta
     path('', RedirectView.as_view(pattern_name='certificates:query', permanent=False), name='home'),
     
@@ -36,6 +92,10 @@ urlpatterns = [
     # Dashboard de estadísticas
     path('admin/dashboard/', dashboard_view, name='admin_dashboard'),
     path('admin/dashboard/refresh/', dashboard_refresh, name='dashboard_refresh'),
+    
+    # Editor de plantillas visual
+    path('admin/template-editor/', TemplateEditorCreateView.as_view(), name='template_editor_create'),
+    path('admin/template-editor/<int:template_id>/', TemplateEditorView.as_view(), name='template_editor'),
     
     # Descargar plantillas Excel
     path('admin/download-template/participants/', DownloadParticipantsTemplateView.as_view(), name='download_participants_template'),

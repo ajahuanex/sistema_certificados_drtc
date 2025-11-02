@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado - {{ template.name }}</title>
+    <style>
+        /* Estilos base incluidos inline para PDF */
+        @page {
+            size: {{ canvas_width }}px {{ canvas_height }}px;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            width: {{ canvas_width }}px;
+            height: {{ canvas_height }}px;
+            font-family: Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .certificate-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            object-fit: cover;
+        }
+        
+        .element {
+            position: absolute;
+            box-sizing: border-box;
+        }
+        
+        .element-text {
+            display: flex;
+            align-items: center;
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+        
+        .element-image {
+            display: block;
+            object-fit: contain;
+        }
+        
+        .element-qr {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .element-latex {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .latex-display {
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .latex-inline {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <!-- Imagen de fondo si existe -->
+        {% if background_url %}
+        <img src="{{ background_url }}" alt="Fondo del certificado" class="background-image">
+        {% endif %}
+        
+        <!-- Elementos de la plantilla -->
+        {% for element in elements %}
+        <div class="element element-{{ element.type|lower }}" 
+             style="{% for property, value in element.css_styles.items %}{{ property }}: {{ value }};{% endfor %}">
+            
+            {% if element.type == 'TEXT' or element.type == 'VARIABLE' %}
+                <!-- Elemento de texto -->
+                {{ element.processed_content|default:element.content }}
+                
+            {% elif element.type == 'LATEX' %}
+                <!-- Elemento LaTeX -->
+                <div class="latex-content">
+                    {{ element.processed_content|safe }}
+                </div>
+                
+            {% elif element.type == 'IMAGE' %}
+                <!-- Elemento de imagen -->
+                {% if element.asset_url %}
+                <img src="{{ element.asset_url }}" 
+                     alt="{{ element.name }}" 
+                     class="element-image"
+                     style="width: 100%; height: 100%; object-fit: contain;">
+                {% else %}
+                <div style="background: #f0f0f0; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #666;">
+                    [Imagen no disponible]
+                </div>
+                {% endif %}
+                
+            {% elif element.type == 'QR' %}
+                <!-- Elemento QR -->
+                <div class="qr-placeholder">
+                    {% if element.qr_data %}
+                    <!-- En una implementación completa, aquí iría el QR real -->
+                    <div style="font-size: 12px; text-align: center;">
+                        QR<br>
+                        <small>{{ element.qr_data|truncatechars:20 }}</small>
+                    </div>
+                    {% else %}
+                    QR
+                    {% endif %}
+                </div>
+                
+            {% else %}
+                <!-- Elemento desconocido -->
+                <div style="background: #ffeeee; color: #cc0000; padding: 5px; font-size: 12px;">
+                    Elemento desconocido: {{ element.type }}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

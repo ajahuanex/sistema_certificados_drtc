@@ -1,0 +1,20 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    
+    {% if templates_to_migrate > 0 %}
+    <li>
+        <a href="{% url 'admin:certificates_certificatetemplate_migrate_all' %}" class="addlink" style="background-color: #ffc107; color: #000;">
+            🔄 Migrar {{ templates_to_migrate }} plantilla{{ templates_to_migrate|pluralize }} al editor visual
+        </a>
+    </li>
+    {% endif %}
+    
+    <li>
+        <a href="{% url 'certificates:template_editor_create' %}" class="addlink" style="background-color: #28a745;">
+            🎨 Crear con Editor Visual
+        </a>
+    </li>
+{% endblock %}

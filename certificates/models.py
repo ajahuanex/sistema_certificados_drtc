@@ -1,7 +1,68 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, FileExtensionValidator
 import uuid
+
+
+class TemplateAsset(models.Model):
+    """Recursos reutilizables para plantillas (imágenes, logos, firmas, sellos)"""
+    ASSET_TYPES = [
+        ('BACKGROUND', 'Fondo'),
+        ('LOGO', 'Logo'),
+        ('SIGNATURE', 'Firma'),
+        ('SEAL', 'Sello'),
+        ('ICON', 'Ícono'),
+    ]
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Nombre",
+        help_text="Nombre descriptivo del asset"
+    )
+    asset_type = models.CharField(
+        max_length=20,
+        choices=ASSET_TYPES,
+        verbose_name="Tipo de Asset"
+    )
+    file = models.ImageField(
+        upload_to='template_assets/%Y/%m/',
+        verbose_name="Archivo",
+        validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'svg'])],
+        help_text="Formatos permitidos: PNG, JPG, JPEG, SVG"
+    )
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Categoría",
+        help_text="Categoría para organización (ej: Logos Institucionales, Firmas)"
+    )
+    is_public = models.BooleanField(
+        default=True,
+        verbose_name="Público",
+        help_text="Si es público, estará disponible para todos los usuarios"
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_assets',
+        verbose_name="Creado por"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado el")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
+    
+    class Meta:
+        verbose_name = "Asset de Plantilla"
+        verbose_name_plural = "Assets de Plantillas"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['asset_type', 'category']),
+            models.Index(fields=['is_public', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_asset_type_display()})"
 
 
 class CertificateTemplate(models.Model):
@@ -19,6 +80,70 @@ class CertificateTemplate(models.Model):
     field_positions = models.JSONField(default=dict, verbose_name="Posiciones de campos")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # ============================================================================
+    # CAMPOS PARA EDITOR VISUAL AVANZADO
+    # ============================================================================
+    
+    # Dimensiones del canvas
+    CANVAS_SIZE_CHOICES = [
+        (842, 595, 'A4 Horizontal (842x595px)'),
+        (595, 842, 'A4 Vertical (595x842px)'),
+        (792, 612, 'Carta Horizontal (792x612px)'),
+        (612, 792, 'Carta Vertical (612x792px)'),
+    ]
+    
+    canvas_width = models.IntegerField(
+        default=842,
+        verbose_name="Ancho del Canvas",
+        help_text="Ancho en píxeles. A4 Horizontal: 842px, A4 Vertical: 595px"
+    )
+    canvas_height = models.IntegerField(
+        default=595,
+        verbose_name="Alto del Canvas", 
+        help_text="Alto en píxeles. A4 Horizontal: 595px, A4 Vertical: 842px"
+    )
+    
+    # Asset de fondo (nuevo sistema)
+    background_asset = models.ForeignKey(
+        TemplateAsset,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='templates_using_as_background',
+        verbose_name="Asset de Fondo",
+        help_text="Asset de la biblioteca usado como fondo"
+    )
+    
+    # Configuración de renderizado
+    render_config = models.JSONField(
+        default=dict,
+        verbose_name="Configuración de Renderizado",
+        help_text="Configuración de DPI, márgenes, calidad, etc."
+    )
+    
+    # Variables disponibles
+    available_variables = models.JSONField(
+        default=list,
+        verbose_name="Variables Disponibles",
+        help_text="Lista de variables que pueden usarse en esta plantilla"
+    )
+    
+    # Metadatos del editor
+    editor_version = models.CharField(
+        max_length=20,
+        default='1.0',
+        verbose_name="Versión del Editor",
+        help_text="Versión del editor con la que se creó/editó"
+    )
+    last_edited_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='last_edited_templates',
+        verbose_name="Último Editor"
+    )
 
     class Meta:
         verbose_name = "Plantilla de Certificado"
@@ -392,6 +517,135 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.get_action_type_display()} - {self.timestamp.strftime('%d/%m/%Y %H:%M:%S')}"
+
+
+class TemplateElement(models.Model):
+    """
+    Elemento individual en una plantilla de certificado.
+    
+    Representa un elemento visual (texto, imagen, QR, LaTeX) que se posiciona
+    en el canvas del editor y se renderiza en el certificado final.
+    """
+    ELEMENT_TYPES = [
+        ('TEXT', 'Texto'),
+        ('IMAGE', 'Imagen'),
+        ('QR', 'Código QR'),
+        ('LATEX', 'Fórmula LaTeX'),
+        ('VARIABLE', 'Variable Dinámica'),
+    ]
+    
+    template = models.ForeignKey(
+        CertificateTemplate,
+        on_delete=models.CASCADE,
+        related_name='elements',
+        verbose_name="Plantilla"
+    )
+    element_type = models.CharField(
+        max_length=20,
+        choices=ELEMENT_TYPES,
+        verbose_name="Tipo de Elemento"
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Nombre",
+        help_text="Nombre descriptivo del elemento"
+    )
+    
+    # ============================================================================
+    # POSICIONAMIENTO Y DIMENSIONES
+    # ============================================================================
+    
+    position_x = models.IntegerField(
+        verbose_name="Posición X",
+        help_text="Posición horizontal en píxeles desde la izquierda"
+    )
+    position_y = models.IntegerField(
+        verbose_name="Posición Y",
+        help_text="Posición vertical en píxeles desde arriba"
+    )
+    width = models.IntegerField(
+        verbose_name="Ancho",
+        help_text="Ancho del elemento en píxeles"
+    )
+    height = models.IntegerField(
+        verbose_name="Alto",
+        help_text="Alto del elemento en píxeles"
+    )
+    rotation = models.FloatField(
+        default=0,
+        verbose_name="Rotación",
+        help_text="Ángulo de rotación en grados (0-360)"
+    )
+    z_index = models.IntegerField(
+        default=0,
+        verbose_name="Orden Z",
+        help_text="Orden de apilamiento (mayor = más al frente)"
+    )
+    
+    # ============================================================================
+    # CONTENIDO
+    # ============================================================================
+    
+    content = models.TextField(
+        verbose_name="Contenido",
+        help_text="Texto, código LaTeX, o referencia a asset"
+    )
+    variables = models.JSONField(
+        default=dict,
+        verbose_name="Variables",
+        help_text="Variables dinámicas usadas en este elemento"
+    )
+    
+    # Referencia a asset (para elementos de tipo IMAGE)
+    asset = models.ForeignKey(
+        TemplateAsset,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='elements_using',
+        verbose_name="Asset",
+        help_text="Asset de la biblioteca (para elementos de imagen)"
+    )
+    
+    # ============================================================================
+    # ESTILO Y CONFIGURACIÓN
+    # ============================================================================
+    
+    style_config = models.JSONField(
+        default=dict,
+        verbose_name="Configuración de Estilo",
+        help_text="Fuente, color, bordes, sombras, etc."
+    )
+    
+    # ============================================================================
+    # METADATOS
+    # ============================================================================
+    
+    is_locked = models.BooleanField(
+        default=False,
+        verbose_name="Bloqueado",
+        help_text="Si está bloqueado, no se puede mover ni editar en el editor"
+    )
+    is_visible = models.BooleanField(
+        default=True,
+        verbose_name="Visible",
+        help_text="Si está visible en el canvas y en el certificado final"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado el")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
+    
+    class Meta:
+        verbose_name = "Elemento de Plantilla"
+        verbose_name_plural = "Elementos de Plantillas"
+        ordering = ['z_index', 'created_at']
+        indexes = [
+            models.Index(fields=['template', 'z_index']),
+            models.Index(fields=['element_type']),
+            models.Index(fields=['is_visible']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_element_type_display()}) - {self.template.name}"
 
 
 class QRProcessingConfig(models.Model):

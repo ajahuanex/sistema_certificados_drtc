@@ -1,0 +1,142 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:certificates_certificatetemplate_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module aligned">
+    <h1>{{ title }}</h1>
+    
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Resumen de Migración</h2>
+            <p><strong>Total de plantillas a migrar:</strong> {{ total_templates }}</p>
+            <p>Se migrarán solo las plantillas que no tienen elementos visuales.</p>
+        </div>
+    </div>
+
+    {% if total_templates > 0 %}
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Preview de Plantillas (primeras 10)</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Plantilla</th>
+                        <th>Elementos a Crear</th>
+                        <th>Variables</th>
+                        <th>Texto</th>
+                        <th>Imágenes</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in preview_results %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.template.name }}</strong><br>
+                            <small>ID: {{ item.template.id }}</small>
+                        </td>
+                        {% if item.preview.success %}
+                        <td>{{ item.preview.total_elements }}</td>
+                        <td>{{ item.preview.elements_by_type.variables }}</td>
+                        <td>{{ item.preview.elements_by_type.text }}</td>
+                        <td>{{ item.preview.elements_by_type.images }}</td>
+                        <td><span class="badge success">✓ Listo</span></td>
+                        {% else %}
+                        <td colspan="4">-</td>
+                        <td><span class="badge error">✗ Error</span></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            {% if total_templates > 10 %}
+            <p><em>... y {{ total_templates|add:"-10" }} plantillas más</em></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Confirmar Migración Masiva</h2>
+            <p>Esta acción:</p>
+            <ul>
+                <li>✓ Migrará {{ total_templates }} plantillas al formato visual</li>
+                <li>✓ Preservará el HTML original como comentario</li>
+                <li>✓ Configurará todas las plantillas para el editor visual</li>
+                <li>⚠ Puede tomar varios minutos</li>
+                <li>⚠ No se puede deshacer fácilmente</li>
+            </ul>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="submit-row">
+                    <input type="submit" value="Migrar Todas las Plantillas" class="default" style="background-color: #28a745;" />
+                    <a href="{% url 'admin:certificates_certificatetemplate_changelist' %}" class="button cancel-link">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="form-row">
+        <div class="field-box">
+            <h2>No hay plantillas para migrar</h2>
+            <p>Todas las plantillas ya tienen elementos visuales o no tienen contenido HTML.</p>
+            <p><a href="{% url 'admin:certificates_certificatetemplate_changelist' %}" class="button">Volver</a></p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.badge.success {
+    background-color: #28a745;
+}
+
+.badge.error {
+    background-color: #dc3545;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.table th,
+.table td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
