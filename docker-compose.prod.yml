@@ -10,7 +10,7 @@ services:
     container_name: certificados_web_prod
     restart: unless-stopped
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - DJANGO_SETTINGS_MODULE=config.settings.base
     env_file:
       - .env.production
     volumes:
@@ -170,10 +170,6 @@ services:
 volumes:
   postgres_data_prod:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /var/lib/docker/volumes/certificados_postgres_data
   redis_data_prod:
     driver: local
 

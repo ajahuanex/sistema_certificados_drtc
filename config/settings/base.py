@@ -63,6 +63,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Database configuration
+DATABASES = {
+    'default': {
+        'ENGINE': env('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': env('DB_NAME', default='certificados_prod'),
+        'USER': env('DB_USER', default='certificados_user'),
+        'PASSWORD': env('DB_PASSWORD', default='certificados_password_123'),
+        'HOST': env('DB_HOST', default='db'),
+        'PORT': env('DB_PORT', default='5432'),
+        'CONN_MAX_AGE': env.int('DB_CONN_MAX_AGE', default=600),
+    }
+}
+
+# Debug configuration
+DEBUG = env.bool('DEBUG', default=False)
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -104,15 +121,11 @@ SIGNATURE_SERVICE_URL = env('SIGNATURE_SERVICE_URL', default='')
 SIGNATURE_API_KEY = env('SIGNATURE_API_KEY', default='')
 SIGNATURE_TIMEOUT = env.int('SIGNATURE_TIMEOUT', default=30)
 
-# Logging Configuration
+# Logging Configuration - Solo consola para evitar problemas de permisos en Docker
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
         'simple': {
             'format': '{levelname} {asctime} {message}',
             'style': '{',
@@ -123,32 +136,22 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'certificates.log',
-            'maxBytes': 10485760,  # 10MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
-        'signature_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'signature.log',
-            'maxBytes': 10485760,  # 10MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
     },
     'loggers': {
         'certificates': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'certificates.signature': {
-            'handlers': ['console', 'signature_file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
         },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
 }
 

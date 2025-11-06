@@ -47,7 +47,43 @@ Sistema de gestión y emisión de certificados digitales para eventos de capacit
 - requests (cliente HTTP para firma digital)
 - django-ratelimit (protección contra abuso)
 
-## Instalación
+## 🚀 Instalación y Despliegue
+
+### 🐳 **Despliegue con Docker (Recomendado para Producción)**
+
+#### Opción A: Prueba Rápida Local
+```bash
+# Clonar repositorio
+git clone https://github.com/tu-usuario/sistema-certificados-drtc.git
+cd sistema-certificados-drtc
+
+# Ejecutar script de prueba automático
+# Windows:
+test-production-local.bat
+
+# Linux/Mac:
+chmod +x test-production-local.sh
+./test-production-local.sh
+```
+
+#### Opción B: Despliegue Manual
+```bash
+# 1. Configurar variables de entorno
+cp .env.production.example .env.production
+# Editar .env.production con tus configuraciones
+
+# 2. Construir y ejecutar
+docker-compose -f docker-compose.prod.yml build
+docker-compose -f docker-compose.prod.yml up -d
+
+# 3. Verificar estado
+docker-compose -f docker-compose.prod.yml ps
+```
+
+#### 🔧 **Troubleshooting Docker**
+Si hay problemas, consulta: `COMANDOS_TROUBLESHOOTING.md`
+
+### 💻 **Instalación Local (Desarrollo)**
 
 ### 1. Clonar el Repositorio
 
@@ -2198,5 +2234,6 @@ Este proyecto es propiedad de la Dirección Regional de Transportes y Comunicaci
 ---
 
 **Sistema de Certificados DRTC Puno** - Desarrollado para la Dirección Regional de Transportes y Comunicaciones de Puno
-#   s i s t e m a _ c e r t i f i c a d o s _ d r t c  
+#   s i s t e m a _ c e r t i f i c a d o s _ d r t c 
+ 
  
