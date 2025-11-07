@@ -49,6 +49,40 @@ Sistema de gestión y emisión de certificados digitales para eventos de capacit
 
 ## 🚀 Instalación y Despliegue
 
+### Despliegue Rápido en la Nube (Puerto 8181)
+
+```bash
+# 1. En tu servidor (Ubuntu 22.04)
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+# 2. Configurar variables de entorno
+cp .env.production.example .env.production
+nano .env.production  # Editar con valores seguros
+
+# 3. Desplegar con Docker
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
+
+# 4. Crear superusuario
+docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+
+# 5. Acceder: http://TU_IP:8181
+```
+
+**📋 Guías Detalladas:**
+- **[DESPLIEGUE_NUBE_PASO_A_PASO.md](DESPLIEGUE_NUBE_PASO_A_PASO.md)** ⭐ Guía completa para la nube
+- **[CHECKLIST_PRODUCCION_REAL.md](CHECKLIST_PRODUCCION_REAL.md)** - Checklist de seguridad
+- **[docs/PRODUCTION_DEPLOYMENT.md](docs/PRODUCTION_DEPLOYMENT.md)** - Documentación técnica
+
+**🔌 Puertos:**
+- HTTP: 8181
+- HTTPS: 8443
+
+---
+
+## 💻 Instalación Local para Desarrollo
+
 ### 🐳 **Despliegue con Docker (Recomendado para Producción)**
 
 #### Opción A: Prueba Rápida Local
