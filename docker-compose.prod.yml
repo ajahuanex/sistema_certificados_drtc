@@ -10,7 +10,7 @@ services:
     container_name: certificados_web_prod
     restart: unless-stopped
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.base
+      - DJANGO_SETTINGS_MODULE=config.settings.production
     env_file:
       - .env.production
     volumes:
