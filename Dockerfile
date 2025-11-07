@@ -62,44 +62,11 @@ RUN mkdir -p /app/media /app/staticfiles /app/logs \
 # Cambiar a usuario no-root
 USER app
 
+# Copiar script de entrada primero
+COPY --chown=app:app entrypoint.sh /app/entrypoint.sh
+
 # Copiar código de la aplicación
 COPY --chown=app:app . .
-
-# Crear script de entrada
-COPY --chown=app:app <<EOF /app/entrypoint.sh
-#!/bin/bash
-set -e
-
-# Esperar a que la base de datos esté disponible
-echo "Esperando a que PostgreSQL esté disponible..."
-while ! pg_isready -h \${DB_HOST:-db} -p \${DB_PORT:-5432} -U \${DB_USER:-certificados_user}; do
-    echo "PostgreSQL no está listo - esperando..."
-    sleep 2
-done
-echo "PostgreSQL está disponible!"
-
-# Ejecutar migraciones
-echo "Ejecutando migraciones..."
-python manage.py migrate --noinput
-
-# Recopilar archivos estáticos
-echo "Recopilando archivos estáticos..."
-python manage.py collectstatic --noinput
-
-# Crear superusuario si no existe
-echo "Verificando superusuario..."
-python manage.py create_superuser_if_not_exists
-
-# Cargar plantilla por defecto si no existe
-echo "Cargando plantilla por defecto..."
-python manage.py load_default_template
-
-echo "Iniciando aplicación..."
-exec "\$@"
-EOF
-
-# Hacer ejecutable el script de entrada
-RUN chmod +x /app/entrypoint.sh
 
 # Exponer puerto
 EXPOSE 8000

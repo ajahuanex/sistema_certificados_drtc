@@ -18,12 +18,20 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from certificates.views.public_views import handler429
 
 # Custom error handlers
 handler429 = 'certificates.views.public_views.handler429'
 
+def health_check(request):
+    """Health check endpoint for Docker"""
+    return JsonResponse({"status": "healthy"})
+
 urlpatterns = [
+    # Health check
+    path("health/", health_check, name="health_check"),
+    
     # Rutas de certificates (admin y públicas) - debe ir antes de admin para que /admin/import-excel/ funcione
     path("", include("certificates.urls")),
     
