@@ -1,6 +1,4 @@
 # Docker Compose para Producción - Sistema de Certificados DRTC
-version: '3.8'
-
 services:
   # Aplicación Django
   web:

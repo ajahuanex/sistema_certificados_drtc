@@ -1,0 +1,9 @@
+# Ignorar todos los archivos de certificados SSL
+*.pem
+*.key
+*.crt
+*.csr
+
+# Permitir solo el README
+!README.md
+!.gitignore

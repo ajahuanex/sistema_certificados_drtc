@@ -12,7 +12,7 @@ SECRET_KEY = env('SECRET_KEY')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
-# Database
+# Database Configuration with Connection Pooling
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -21,9 +21,48 @@ DATABASES = {
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST'),
         'PORT': env('DB_PORT', default='5432'),
-        'CONN_MAX_AGE': 600,
+        # Connection pooling - mantener conexiones abiertas por 10 minutos
+        'CONN_MAX_AGE': env.int('DB_CONN_MAX_AGE', default=600),
+        # Opciones adicionales de PostgreSQL
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'options': '-c statement_timeout=30000',  # 30 segundos timeout para queries
+        },
+        # Configuración de pool de conexiones
+        'ATOMIC_REQUESTS': True,  # Envolver cada request en una transacción
+        'AUTOCOMMIT': True,
+        'CONN_HEALTH_CHECKS': True,  # Verificar salud de conexiones antes de usarlas
     }
 }
+
+# Cache Configuration with Redis - Override base settings for production
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': env('REDIS_URL', default='redis://redis:6379/0'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            },
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+            'PARSER_CLASS': 'redis.connection.HiredisParser',
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+        },
+        'KEY_PREFIX': env('CACHE_KEY_PREFIX', default='certificados_prod'),
+        'TIMEOUT': env.int('CACHE_TIMEOUT', default=3600),  # 1 hora por defecto en producción
+    }
+}
+
+# Session Configuration with Redis - Override base settings for production
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Security settings
 # SSL redirect deshabilitado para pruebas locales - habilitar en producción real con HTTPS

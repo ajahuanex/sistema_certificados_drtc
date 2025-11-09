@@ -6,7 +6,14 @@
 **Contraseña**: `admin123`  
 **Email**: admin@drtc.gob.pe
 
-**URL de acceso**: http://127.0.0.1:8000/admin/
+**URL de acceso**: 
+- Desarrollo: http://127.0.0.1:8000/admin/ o http://127.0.0.1:8001/admin/
+- Producción: https://tu-dominio.com/admin/
+
+**Nota**: Si las credenciales no funcionan, ejecuta:
+```bash
+python manage.py create_superuser_if_not_exists --update --noinput
+```
 
 ---
 

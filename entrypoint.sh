@@ -17,9 +17,9 @@ python manage.py migrate --noinput
 echo "Recopilando archivos estáticos..."
 python manage.py collectstatic --noinput
 
-# Crear superusuario si no existe
+# Crear superusuario si no existe (o actualizar si existe)
 echo "Verificando superusuario..."
-python manage.py create_superuser_if_not_exists
+python manage.py create_superuser_if_not_exists --update --noinput
 
 # Cargar plantilla por defecto si no existe
 echo "Cargando plantilla por defecto..."
