@@ -135,7 +135,12 @@
   - Crear checklist de verificación post-despliegue
   - _Requirements: 6.4_
 
-- [ ] 15. Implementar tests de integración para Docker
+- [x] 15. Implementar tests de integración para Docker
+
+
+
+
+
 
 
 
