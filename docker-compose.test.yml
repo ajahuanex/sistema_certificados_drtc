@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: test_certificados
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_certificados"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  test-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py test certificates.tests.test_docker_integration --verbosity=2
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.base
+      - DEBUG=True
+      - SECRET_KEY=test-secret-key-for-testing-only
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=test_certificados
+      - DB_USER=test_user
+      - DB_PASSWORD=test_password
+      - DB_HOST=test-db
+      - DB_PORT=5432
+      - REDIS_URL=redis://test-redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    volumes:
+      - ./certificates:/app/certificates
+      - ./config:/app/config
+      - test-media:/app/media
+      - test-static:/app/staticfiles
+
+volumes:
+  test-media:
+  test-static:

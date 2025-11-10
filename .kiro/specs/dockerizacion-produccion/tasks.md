@@ -136,6 +136,12 @@
   - _Requirements: 6.4_
 
 - [ ] 15. Implementar tests de integración para Docker
+
+
+
+
+
+
   - Crear tests para verificar funcionamiento en contenedores
   - Implementar tests de comunicación entre servicios
   - Crear tests de persistencia de datos
