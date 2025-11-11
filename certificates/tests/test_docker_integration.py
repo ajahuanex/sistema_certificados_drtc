@@ -409,26 +409,28 @@ class DockerPerformanceTest(TestCase):
     def test_database_query_performance(self):
         """Verifica el rendimiento de consultas a la base de datos"""
         import time
+        import uuid
         
-        # Crear datos de prueba
+        # Crear datos de prueba con nombres únicos
+        unique_id = str(uuid.uuid4())[:8]
         template = CertificateTemplate.objects.create(
-            name="Performance Test",
+            name=f"Performance Test {unique_id}",
             html_template="<html><body>Test</body></html>",
             is_default=False
         )
         
         event = Event.objects.create(
-            name="Performance Event",
+            name=f"Performance Event {unique_id}",
             event_date=date(2024, 1, 15),
             template=template
         )
         
-        # Crear 100 participantes
+        # Crear 100 participantes con DNIs únicos
         participants = []
         for i in range(100):
             participants.append(
                 Participant(
-                    dni=f"1000000{i:02d}",
+                    dni=f"PERF{unique_id}{i:03d}",
                     full_name=f"Test User {i}",
                     event=event,
                     attendee_type="ASISTENTE"

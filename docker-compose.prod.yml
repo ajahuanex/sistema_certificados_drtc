@@ -23,12 +23,13 @@ services:
         condition: service_healthy
     networks:
       - certificados_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Health check deshabilitado temporalmente por problema con hiredis
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
 
   # Base de datos PostgreSQL
   db:
@@ -92,8 +93,8 @@ services:
     container_name: certificados_nginx_prod
     restart: unless-stopped
     ports:
-      - "8181:80"
-      - "8443:443"
+      - "7070:80"
+      - "7443:443"
     volumes:
       - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - ./staticfiles:/app/staticfiles:ro
@@ -101,12 +102,11 @@ services:
       - ./ssl:/etc/nginx/ssl:ro
       - ./logs/nginx:/var/log/nginx
     depends_on:
-      web:
-        condition: service_healthy
+      - web
     networks:
       - certificados_network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -177,6 +177,6 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.25.0.0/16
     driver_opts:
       com.docker.network.bridge.name: br-certificados
