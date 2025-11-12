@@ -1,0 +1,34 @@
+# ============================================
+# APLICAR CONFIGURACIÓN NGINX TEMPORAL (HTTP)
+# ============================================
+
+# Paso 1: Copiar la nueva configuración al contenedor nginx
+docker cp nginx.prod.http-only.conf certificados-drtc-nginx-1:/etc/nginx/nginx.conf
+
+# Paso 2: Verificar que la configuración es válida
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
+
+# Paso 3: Recargar nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -s reload
+
+# Paso 4: Ejecutar collectstatic en el contenedor web
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput
+
+# Paso 5: Verificar que los archivos estáticos existen
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web ls -la /app/staticfiles/admin/css/
+
+# Paso 6: Reiniciar nginx para asegurar cambios
+docker compose -f docker-compose.prod.yml --env-file .env.production restart nginx
+
+# Paso 7: Ver logs
+docker compose -f docker-compose.prod.yml --env-file .env.production logs nginx
+
+# ============================================
+# AHORA PRUEBA EN EL NAVEGADOR:
+# http://161.132.47.92:7070/admin/
+# ============================================
+
+# Si el nombre del contenedor es diferente, primero verifica:
+docker ps | grep nginx
+
+# Y ajusta el comando del Paso 1 con el nombre correcto

@@ -1,0 +1,32 @@
+# ============================================
+# COMANDOS FINALES - COPIAR Y PEGAR EN UBUNTU
+# ============================================
+
+# PASO 1: Ver nombre del contenedor nginx
+docker ps
+
+# PASO 2: Copiar configuración HTTP a nginx
+# IMPORTANTE: Reemplaza "certificados-drtc-nginx-1" con el nombre real
+docker cp nginx.prod.http-only.conf certificados-drtc-nginx-1:/etc/nginx/nginx.conf
+
+# PASO 3: Verificar configuración
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
+
+# PASO 4: Recolectar archivos estáticos
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput --clear
+
+# PASO 5: Recargar nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -s reload
+
+# PASO 6: Ver logs
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=30 nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=30 web
+
+# ============================================
+# PRUEBA EN EL NAVEGADOR:
+# http://161.132.47.92:7070/admin/
+# ============================================
+
+# Si funciona, verás el admin de Django con estilos correctos
+# Usuario: admin
+# Contraseña: admin123

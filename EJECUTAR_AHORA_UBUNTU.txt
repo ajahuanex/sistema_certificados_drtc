@@ -1,0 +1,33 @@
+# ============================================
+# COMANDOS PARA EJECUTAR EN UBUNTU
+# Copia y pega uno por uno
+# ============================================
+
+# 1. Dar permisos de ejecución al entrypoint.sh
+chmod +x entrypoint.sh
+
+# 2. Verificar permisos (debe mostrar -rwxr-xr-x)
+ls -la entrypoint.sh
+
+# 3. Reconstruir imagen sin caché
+docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache web
+
+# 4. Levantar el servicio web
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d web
+
+# 5. Esperar 30 segundos
+sleep 30
+
+# 6. Ver logs del contenedor
+docker compose -f docker-compose.prod.yml --env-file .env.production logs web
+
+# 7. Ver estado de todos los contenedores
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+
+# ============================================
+# AHORA PRUEBA EN TU NAVEGADOR:
+# http://161.132.47.92:7070/admin/
+# ============================================
+
+# Si quieres ver logs en tiempo real:
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f web

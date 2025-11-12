@@ -1,0 +1,61 @@
+# ============================================
+# SOLUCIÓN: Archivos Estáticos 404
+# ============================================
+
+# El problema: collectstatic no se ejecutó correctamente
+# o nginx no está sirviendo los archivos estáticos
+
+# OPCIÓN 1: Ejecutar collectstatic manualmente dentro del contenedor
+# ============================================
+
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput
+
+# Verificar que los archivos se crearon:
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web ls -la /app/staticfiles/
+
+# Reiniciar nginx para que reconozca los archivos:
+docker compose -f docker-compose.prod.yml --env-file .env.production restart nginx
+
+# Esperar 10 segundos:
+sleep 10
+
+# Ver logs de nginx:
+docker compose -f docker-compose.prod.yml --env-file .env.production logs nginx
+
+
+# OPCIÓN 2: Si la Opción 1 no funciona, reconstruir todo
+# ============================================
+
+# Detener todos los servicios:
+docker compose -f docker-compose.prod.yml --env-file .env.production down
+
+# Reconstruir la imagen web:
+docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache web
+
+# Levantar todos los servicios:
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# Esperar 30 segundos:
+sleep 30
+
+# Ver logs:
+docker compose -f docker-compose.prod.yml --env-file .env.production logs web
+
+
+# VERIFICACIÓN
+# ============================================
+
+# Ver si los archivos estáticos existen:
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web ls -la /app/staticfiles/admin/css/
+
+# Ver configuración de nginx:
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx cat /etc/nginx/conf.d/default.conf
+
+# Probar acceso directo a un archivo estático:
+curl -I http://161.132.47.92:7070/static/admin/css/base.css
+
+
+# ============================================
+# DESPUÉS DE EJECUTAR, PRUEBA EN EL NAVEGADOR:
+# http://161.132.47.92:7070/admin/
+# ============================================

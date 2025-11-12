@@ -1,0 +1,37 @@
+# ============================================
+# DESPLIEGUE FINAL CON HTTP (SIN SSL)
+# Para usar con reverse proxy externo después
+# ============================================
+
+# PASO 1: Ver nombre del contenedor nginx
+docker ps | grep nginx
+
+# PASO 2: Copiar configuración HTTP a nginx
+# Reemplaza el nombre del contenedor si es diferente
+docker cp nginx.prod.http-only.conf certificados-drtc-nginx-1:/etc/nginx/nginx.conf
+
+# PASO 3: Verificar que la configuración es válida
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
+
+# PASO 4: Recolectar archivos estáticos
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput --clear
+
+# PASO 5: Recargar nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -s reload
+
+# PASO 6: Ver logs para verificar
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=30 nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=30 web
+
+# ============================================
+# ACCESO:
+# http://161.132.47.92:7070/admin/
+# Usuario: admin
+# Contraseña: admin123
+# ============================================
+
+# NOTAS PARA REVERSE PROXY FUTURO:
+# - La aplicación escucha en el puerto 7070
+# - Nginx interno sirve archivos estáticos desde /app/staticfiles/
+# - Puedes poner Nginx/Caddy/Traefik delante para HTTPS
+# - El reverse proxy debe hacer proxy_pass a http://161.132.47.92:7070

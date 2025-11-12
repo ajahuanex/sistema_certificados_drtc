@@ -1,0 +1,80 @@
+# ============================================
+# ACTUALIZAR DESDE GITHUB EN UBUNTU
+# Ejecuta estos comandos en orden
+# ============================================
+
+# PASO 1: Ir al directorio del proyecto
+cd ~/drtc_certificados
+
+# PASO 2: Hacer backup de .env.production (por si acaso)
+cp .env.production .env.production.backup
+
+# PASO 3: Detener los contenedores
+docker compose -f docker-compose.prod.yml --env-file .env.production down
+
+# PASO 4: Actualizar código desde GitHub
+git pull origin main
+
+# PASO 5: Verificar que entrypoint.sh tiene permisos
+ls -la entrypoint.sh
+
+# PASO 6: Si no tiene permisos, darlos manualmente
+chmod +x entrypoint.sh
+
+# PASO 7: Reconstruir la imagen web (con el entrypoint.sh actualizado)
+docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache web
+
+# PASO 8: Levantar todos los servicios
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# PASO 9: Esperar 30 segundos
+sleep 30
+
+# PASO 10: Ver nombre del contenedor nginx
+docker ps | grep nginx
+
+# PASO 11: Copiar configuración HTTP a nginx
+# Reemplaza "certificados-drtc-nginx-1" con el nombre real
+docker cp nginx.prod.http-only.conf certificados-drtc-nginx-1:/etc/nginx/nginx.conf
+
+# PASO 12: Verificar configuración de nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
+
+# PASO 13: Recolectar archivos estáticos
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput --clear
+
+# PASO 14: Recargar nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -s reload
+
+# PASO 15: Ver logs para verificar
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=50 web
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=50 nginx
+
+# PASO 16: Ver estado de todos los contenedores
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+
+# ============================================
+# PRUEBA EN EL NAVEGADOR:
+# http://161.132.47.92:7070/admin/
+# Usuario: admin
+# Contraseña: admin123
+# ============================================
+
+# COMANDOS ÚTILES PARA DEBUGGING
+# ============================================
+
+# Ver logs en tiempo real
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f
+
+# Reiniciar un servicio específico
+docker compose -f docker-compose.prod.yml --env-file .env.production restart web
+docker compose -f docker-compose.prod.yml --env-file .env.production restart nginx
+
+# Entrar al contenedor web
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web bash
+
+# Ver archivos estáticos dentro del contenedor
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web ls -la /app/staticfiles/admin/css/
+
+# Probar acceso a archivo estático
+curl -I http://161.132.47.92:7070/static/admin/css/base.css

@@ -1,0 +1,114 @@
+# ============================================
+# SOLUCIÓN COMPLETA - ARCHIVOS ESTÁTICOS 404
+# Ejecuta estos comandos en orden en Ubuntu
+# ============================================
+
+# DIAGNÓSTICO INICIAL
+# ============================================
+
+# 1. Ver nombre exacto del contenedor nginx
+docker ps | grep nginx
+
+# Anota el nombre, probablemente sea uno de estos:
+# - certificados-drtc-nginx-1
+# - drtc_certificados-nginx-1
+# - nginx-1
+
+# 2. Ver estado actual de todos los contenedores
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+
+
+# SOLUCIÓN PASO A PASO
+# ============================================
+
+# PASO 1: Copiar configuración HTTP temporal a nginx
+# Reemplaza "certificados-drtc-nginx-1" con el nombre real de tu contenedor
+docker cp nginx.prod.http-only.conf certificados-drtc-nginx-1:/etc/nginx/nginx.conf
+
+# PASO 2: Verificar que la configuración es válida
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -t
+
+# PASO 3: Recolectar archivos estáticos
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput --clear
+
+# PASO 4: Verificar que los archivos estáticos se crearon
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web ls -la /app/staticfiles/
+
+# PASO 5: Verificar archivos CSS del admin
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web ls -la /app/staticfiles/admin/css/
+
+# PASO 6: Recargar configuración de nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -s reload
+
+# PASO 7: Reiniciar nginx (por si acaso)
+docker compose -f docker-compose.prod.yml --env-file .env.production restart nginx
+
+# PASO 8: Esperar 10 segundos
+sleep 10
+
+# PASO 9: Ver logs de nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=50 nginx
+
+# PASO 10: Ver logs de web
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=50 web
+
+
+# VERIFICACIÓN
+# ============================================
+
+# Ver estado de todos los servicios
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+
+# Probar acceso a un archivo estático directamente
+curl -I http://161.132.47.92:7070/static/admin/css/base.css
+
+# Si el curl muestra "200 OK", los archivos estáticos funcionan
+
+
+# ============================================
+# AHORA PRUEBA EN TU NAVEGADOR:
+# http://161.132.47.92:7070/admin/
+# ============================================
+
+
+# SI SIGUE SIN FUNCIONAR - PLAN B
+# ============================================
+
+# Reiniciar todo desde cero
+docker compose -f docker-compose.prod.yml --env-file .env.production down
+
+# Levantar todo de nuevo
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# Esperar 30 segundos
+sleep 30
+
+# Copiar configuración nginx nuevamente
+docker cp nginx.prod.http-only.conf certificados-drtc-nginx-1:/etc/nginx/nginx.conf
+
+# Recargar nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx nginx -s reload
+
+# Ejecutar collectstatic
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web python manage.py collectstatic --noinput --clear
+
+# Ver logs
+docker compose -f docker-compose.prod.yml --env-file .env.production logs
+
+
+# COMANDOS ÚTILES PARA DEBUGGING
+# ============================================
+
+# Ver configuración actual de nginx
+docker compose -f docker-compose.prod.yml --env-file .env.production exec nginx cat /etc/nginx/nginx.conf
+
+# Entrar al contenedor web para explorar
+docker compose -f docker-compose.prod.yml --env-file .env.production exec web bash
+
+# Una vez dentro del contenedor:
+# ls -la /app/staticfiles/
+# ls -la /app/staticfiles/admin/
+# exit
+
+# Ver logs en tiempo real
+docker compose -f docker-compose.prod.yml --env-file .env.production logs -f
