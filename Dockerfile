@@ -59,11 +59,14 @@ COPY --from=builder /root/.local /home/app/.local
 RUN mkdir -p /app/media /app/staticfiles /app/logs \
     && chown -R app:app /app
 
+# Copiar script de entrada primero (como root para dar permisos)
+COPY entrypoint.sh /app/entrypoint.sh
+
+# Dar permisos de ejecución al entrypoint
+RUN chmod +x /app/entrypoint.sh && chown app:app /app/entrypoint.sh
+
 # Cambiar a usuario no-root
 USER app
-
-# Copiar script de entrada primero
-COPY --chown=app:app entrypoint.sh /app/entrypoint.sh
 
 # Copiar código de la aplicación
 COPY --chown=app:app . .
