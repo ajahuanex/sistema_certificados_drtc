@@ -12,6 +12,9 @@ SECRET_KEY = env('SECRET_KEY')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
+# CSRF Trusted Origins - Para evitar error 403 en formularios
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+
 # Database Configuration with Connection Pooling
 DATABASES = {
     'default': {
