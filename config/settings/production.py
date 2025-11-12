@@ -48,7 +48,7 @@ CACHES = {
             },
             'SOCKET_CONNECT_TIMEOUT': 5,
             'SOCKET_TIMEOUT': 5,
-            'PARSER_CLASS': 'redis.connection.HiredisParser',
+            # HiredisParser removido - no está disponible en el contenedor
             'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
         },
         'KEY_PREFIX': env('CACHE_KEY_PREFIX', default='certificados_prod'),
