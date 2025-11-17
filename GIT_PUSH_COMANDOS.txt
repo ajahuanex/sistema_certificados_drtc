@@ -1,0 +1,25 @@
+# ============================================
+# COMANDOS GIT PARA WINDOWS
+# Ejecuta estos comandos en orden
+# ============================================
+
+# 1. Dar permisos de ejecución al entrypoint.sh (Git guardará esto)
+git update-index --chmod=+x entrypoint.sh
+
+# 2. Ver estado de los cambios
+git status
+
+# 3. Agregar todos los archivos
+git add .
+
+# 4. Hacer commit
+git commit -m "Fix: Nginx HTTP config y permisos entrypoint - Archivos estaticos corregidos"
+
+# 5. Subir a GitHub
+git push origin main
+
+# ============================================
+# Si hay conflictos, primero hacer pull:
+# git pull origin main --rebase
+# Luego repetir el push
+# ============================================
