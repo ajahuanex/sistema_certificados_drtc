@@ -1,0 +1,120 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║         ✅ SOLUCIÓN AL ERROR "Set the DB_NAME environment variable"       ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+🔴 PROBLEMA DETECTADO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+El archivo .env.production tenía variables con nombres incorrectos.
+Django esperaba: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST
+Pero tenía: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SOLUCIÓN RÁPIDA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+En el servidor, ejecuta estos comandos:
+
+# 1. Detener contenedores
+docker compose down
+
+# 2. Recrear .env.production con las variables correctas
+cat > .env.production << 'EOF'
+# DJANGO SETTINGS
+SECRET_KEY=5)@a3rk*91dr(=j$inp(3i3aot=f0l-z!(3_-=b%p+e90f*xir
+DEBUG=False
+ALLOWED_HOSTS=161.132.47.92,localhost,127.0.0.1,certificados.transportespuno.gob.pe
+CSRF_TRUSTED_ORIGINS=http://161.132.47.92,http://localhost
+
+# DATABASE - Variables para Django
+DB_NAME=certificados_db
+DB_USER=certificados_user
+DB_PASSWORD=PZW5EK0rvaA34uR9TJSVei8H67sN1tgO
+DB_HOST=postgres
+DB_PORT=5432
+
+# DATABASE - Variables para PostgreSQL Container
+POSTGRES_DB=certificados_db
+POSTGRES_USER=certificados_user
+POSTGRES_PASSWORD=PZW5EK0rvaA34uR9TJSVei8H67sN1tgO
+
+# REDIS
+REDIS_URL=redis://:3FvkPhxH2zE1mqf5twjTiLra80COcpDn@redis:6379/0
+REDIS_PASSWORD=3FvkPhxH2zE1mqf5twjTiLra80COcpDn
+
+# EMAIL (Opcional)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+
+# SECURITY
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+EOF
+
+# 3. Reiniciar contenedores
+docker compose up -d
+
+# 4. Esperar 15 segundos
+sleep 15
+
+# 5. Ejecutar migraciones
+docker compose exec web python manage.py migrate
+
+# 6. Recolectar estáticos
+docker compose exec web python manage.py collectstatic --noinput
+
+# 7. Crear superusuario
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+# 8. Verificar
+docker compose ps
+curl http://localhost:7070/health/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ DESPUÉS DE ESTO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+La aplicación debería estar corriendo en:
+http://localhost:7070
+
+Accede desde tu navegador:
+http://161.132.47.92:7070/admin/
+
+Usuario: admin
+Contraseña: admin123
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 SI AÚN HAY PROBLEMAS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Ver logs detallados
+docker compose logs web
+
+# Verificar variables de entorno dentro del contenedor
+docker compose exec web env | grep DB
+
+# Reiniciar desde cero
+docker compose down -v
+docker compose up -d
+sleep 15
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    ✅ PROBLEMA SOLUCIONADO                                ║
+║                                                                            ║
+║              Copia y ejecuta los comandos en el servidor                  ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
