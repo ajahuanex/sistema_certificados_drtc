@@ -1,0 +1,277 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║              🚀 DESPLIEGUE EN SERVIDOR 161.132.47.92                      ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📋 INFORMACIÓN DEL SERVIDOR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   IP:              161.132.47.92
+   Docker:          ✅ Instalado
+   Docker Compose:  ✅ Instalado (sin guion)
+   Repositorio:     https://github.com/ajahuanex/sistema_certificados_drtc.git
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 COMANDOS PARA EJECUTAR (Copia y pega):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: CONECTAR AL SERVIDOR                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+ssh root@161.132.47.92
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: CLONAR REPOSITORIO                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 3: CONFIGURAR VARIABLES DE ENTORNO                                │
+└─────────────────────────────────────────────────────────────────────────┘
+
+cp .env.production.example .env.production
+nano .env.production
+
+┌──────────────────────────────────────────────────────────────────┐
+│ CONFIGURACIÓN RECOMENDADA:                                      │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ # Django                                                         │
+│ SECRET_KEY=<GENERA_UNA_NUEVA>                                   │
+│ DEBUG=False                                                      │
+│ ALLOWED_HOSTS=161.132.47.92,localhost,127.0.0.1                │
+│                                                                  │
+│ # Base de datos                                                  │
+│ POSTGRES_DB=certificados_db                                     │
+│ POSTGRES_USER=certificados_user                                 │
+│ POSTGRES_PASSWORD=CertDRTC2025!Seguro                          │
+│                                                                  │
+│ # Redis                                                          │
+│ REDIS_PASSWORD=RedisDRTC2025!Seguro                            │
+│                                                                  │
+│ # Dominio (opcional)                                            │
+│ DOMAIN=161.132.47.92                                            │
+│ SSL_EMAIL=admin@drtc.gob.pe                                     │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+# Generar SECRET_KEY:
+python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+# Guardar y salir:
+Ctrl + O (guardar)
+Enter
+Ctrl + X (salir)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 4: DAR PERMISOS A SCRIPTS                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+chmod +x deploy-ubuntu.sh
+chmod +x scripts/*.sh
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 5: DESPLEGAR (Usa docker compose SIN GUION)                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+# Construir imágenes
+docker compose build
+
+# Iniciar servicios
+docker compose up -d
+
+# Esperar 15 segundos
+sleep 15
+
+# Ejecutar migraciones
+docker compose exec web python manage.py migrate
+
+# Recolectar archivos estáticos
+docker compose exec web python manage.py collectstatic --noinput
+
+# Crear superusuario
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 6: VERIFICAR DESPLIEGUE                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+# Ver estado de contenedores
+docker compose ps
+
+# Ver logs
+docker compose logs -f
+
+# Verificar salud (Ctrl+C para salir de logs primero)
+curl http://localhost/health/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 ACCEDER A LA APLICACIÓN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Desde tu navegador:
+
+   Principal:  http://161.132.47.92/
+   Admin:      http://161.132.47.92/admin/
+   Dashboard:  http://161.132.47.92/admin/dashboard/
+   Consulta:   http://161.132.47.92/consulta/
+
+   Credenciales:
+   Usuario:    admin
+   Contraseña: admin123
+
+   ⚠️  IMPORTANTE: Cambia la contraseña inmediatamente:
+   docker compose exec web python manage.py changepassword admin
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 COMANDOS ÚTILES (docker compose SIN GUION):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Ver estado
+docker compose ps
+
+# Ver logs en tiempo real
+docker compose logs -f
+
+# Ver logs de un servicio específico
+docker compose logs -f web
+docker compose logs -f nginx
+docker compose logs -f postgres
+
+# Reiniciar servicios
+docker compose restart
+
+# Reiniciar un servicio específico
+docker compose restart web
+
+# Detener servicios
+docker compose down
+
+# Detener y eliminar volúmenes
+docker compose down -v
+
+# Reconstruir imágenes
+docker compose build --no-cache
+
+# Actualizar aplicación
+git pull origin main
+docker compose build
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+
+# Backup de base de datos
+docker compose exec postgres pg_dump -U certificados_user certificados_db > backup_$(date +%Y%m%d).sql
+
+# Cambiar contraseña de admin
+docker compose exec web python manage.py changepassword admin
+
+# Acceder a shell de Django
+docker compose exec web python manage.py shell
+
+# Ver uso de recursos
+docker stats
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 TROUBLESHOOTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problema: Contenedores no inician
+Solución: docker compose logs
+          docker compose down
+          docker compose up -d
+
+Problema: Error de base de datos
+Solución: docker compose logs postgres
+          docker compose exec web python manage.py migrate
+
+Problema: Archivos estáticos no cargan
+Solución: docker compose exec web python manage.py collectstatic --noinput
+          docker compose restart nginx
+
+Problema: Puerto 80 ocupado
+Solución: sudo lsof -i :80
+          sudo systemctl stop apache2
+          sudo systemctl stop nginx
+
+Problema: Sin espacio en disco
+Solución: docker system prune -a
+          docker volume prune
+          df -h
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 SCRIPT COMPLETO (Copia todo de una vez):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#!/bin/bash
+# Despliegue automático en 161.132.47.92
+
+# Clonar repositorio
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+# Configurar variables (EDITA ESTO PRIMERO)
+cp .env.production.example .env.production
+# IMPORTANTE: Edita .env.production antes de continuar
+# nano .env.production
+
+# Dar permisos
+chmod +x deploy-ubuntu.sh scripts/*.sh
+
+# Construir e iniciar
+docker compose build
+docker compose up -d
+sleep 15
+
+# Configurar aplicación
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+# Ver estado
+docker compose ps
+docker compose logs --tail=50
+
+echo "✅ Despliegue completado"
+echo "Accede a: http://161.132.47.92/admin/"
+echo "Usuario: admin / Contraseña: admin123"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 NOTAS IMPORTANTES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Tu servidor usa "docker compose" (SIN GUION) en lugar de "docker-compose"
+2. Todos los comandos en esta guía usan "docker compose"
+3. Asegúrate de configurar .env.production antes de desplegar
+4. Cambia la contraseña de admin inmediatamente después del despliegue
+5. El servidor estará accesible en http://161.132.47.92
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    🚀 ¡LISTO PARA DESPLEGAR!                              ║
+║                                                                            ║
+║              Conecta al servidor y ejecuta los comandos                   ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝

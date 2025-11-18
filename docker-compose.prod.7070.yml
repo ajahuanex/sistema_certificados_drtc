@@ -1,0 +1,89 @@
+# Docker Compose para Producción - Puerto 7070
+# Sistema de Certificados DRTC
+# Servidor: 161.132.47.92
+# Con Nginx Proxy Inverso
+
+version: '3.8'
+
+services:
+  # Aplicación Django
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: certificados_web
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "7070:8000"
+    volumes:
+      - media_files:/app/media
+      - static_files:/app/staticfiles
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
+
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: certificados_postgres
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-certificados_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para caché
+  redis:
+    image: redis:7-alpine
+    container_name: certificados_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis_data:/data
+    networks:
+      - certificados_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  media_files:
+    driver: local
+  static_files:
+    driver: local
+
+networks:
+  certificados_network:
+    driver: bridge

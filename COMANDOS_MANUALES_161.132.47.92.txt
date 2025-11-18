@@ -1,0 +1,237 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║         🚀 COMANDOS MANUALES PARA 161.132.47.92                           ║
+║            (SIN SCRIPTS - SOLO DOCKER COMPOSE)                            ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📋 SERVIDOR: 161.132.47.92
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  IMPORTANTE: NO ejecutar deploy-ubuntu.sh
+✅ Solo comandos manuales de Docker Compose
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 1: CONECTAR AL SERVIDOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ssh root@161.132.47.92
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 2: CLONAR REPOSITORIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 3: CONFIGURAR VARIABLES DE ENTORNO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Copiar archivo de ejemplo
+cp .env.production.example .env.production
+
+# Generar SECRET_KEY
+python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+# Editar archivo
+nano .env.production
+
+┌──────────────────────────────────────────────────────────────────┐
+│ CONFIGURACIÓN MÍNIMA NECESARIA:                                 │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ SECRET_KEY=<PEGA_LA_CLAVE_GENERADA_ARRIBA>                     │
+│ DEBUG=False                                                      │
+│ ALLOWED_HOSTS=161.132.47.92,localhost,127.0.0.1                │
+│                                                                  │
+│ POSTGRES_DB=certificados_db                                     │
+│ POSTGRES_USER=certificados_user                                 │
+│ POSTGRES_PASSWORD=CertDRTC2025Seguro                           │
+│                                                                  │
+│ REDIS_PASSWORD=RedisDRTC2025Seguro                             │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+# Guardar: Ctrl+O, Enter, Ctrl+X
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 4: CONSTRUIR IMÁGENES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose build
+
+# Esto tomará varios minutos la primera vez
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 5: INICIAR CONTENEDORES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose up -d
+
+# Esperar 15 segundos para que los servicios inicien
+sleep 15
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 6: EJECUTAR MIGRACIONES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose exec web python manage.py migrate
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 7: RECOLECTAR ARCHIVOS ESTÁTICOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose exec web python manage.py collectstatic --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 8: CREAR SUPERUSUARIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+# Esto crea: admin / admin123
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 9: VERIFICAR ESTADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Ver contenedores
+docker compose ps
+
+# Ver logs
+docker compose logs --tail=50
+
+# Verificar salud
+curl http://localhost/health/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ LISTO! ACCEDER A LA APLICACIÓN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Abre en tu navegador:
+
+   http://161.132.47.92/admin/
+
+   Usuario:    admin
+   Contraseña: admin123
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 COMANDOS ÚTILES POST-DESPLIEGUE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Cambiar contraseña de admin
+docker compose exec web python manage.py changepassword admin
+
+# Ver logs en tiempo real
+docker compose logs -f
+
+# Ver logs de un servicio
+docker compose logs -f web
+docker compose logs -f nginx
+docker compose logs -f postgres
+
+# Reiniciar servicios
+docker compose restart
+
+# Reiniciar un servicio específico
+docker compose restart web
+
+# Detener todo
+docker compose down
+
+# Ver estado
+docker compose ps
+
+# Backup de base de datos
+docker compose exec postgres pg_dump -U certificados_user certificados_db > backup.sql
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔄 ACTUALIZAR APLICACIÓN (Futuro):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cd sistema_certificados_drtc
+git pull origin main
+docker compose build
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 SI ALGO FALLA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Ver logs detallados
+docker compose logs
+
+# Reiniciar todo
+docker compose down
+docker compose up -d
+
+# Reconstruir desde cero
+docker compose down -v
+docker compose build --no-cache
+docker compose up -d
+
+# Ver qué está usando el puerto 80
+sudo lsof -i :80
+
+# Detener Apache si está corriendo
+sudo systemctl stop apache2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 RESUMEN DE COMANDOS (Copia todo):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# 1. Conectar
+ssh root@161.132.47.92
+
+# 2. Clonar
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+# 3. Configurar
+cp .env.production.example .env.production
+python3 -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+nano .env.production
+# (Editar SECRET_KEY, ALLOWED_HOSTS, passwords)
+
+# 4. Desplegar
+docker compose build
+docker compose up -d
+sleep 15
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+# 5. Verificar
+docker compose ps
+docker compose logs --tail=50
+
+# 6. Acceder
+# http://161.132.47.92/admin/
+# admin / admin123
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    ✅ COMANDOS LISTOS PARA COPIAR                         ║
+║                                                                            ║
+║              NO se instala nada extra, solo Docker Compose                ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
