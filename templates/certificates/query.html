@@ -211,22 +211,99 @@
     
     @media (max-width: 768px) {
         .hero-section {
-            padding: 2rem 0;
+            padding: 1.5rem 0;
+            margin-bottom: 1rem;
         }
         
-        .certificate-card .row > div {
-            margin-bottom: 0.5rem;
+        /* Buscador sticky en móvil cuando hay resultados */
+        body:has(.results-header) .search-card {
+            position: sticky;
+            top: 60px;
+            z-index: 100;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .search-card .card-header {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .search-card .card-body {
+            padding: 1rem !important;
+        }
+        
+        .dni-input {
+            font-size: 1rem;
+            padding: 0.6rem;
+            letter-spacing: 2px;
+        }
+        
+        .btn-search {
+            padding: 0.6rem 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Botones solo con iconos en móvil */
+        .btn-action .btn-text {
+            display: none;
         }
         
         .btn-action {
-            width: 100%;
-            margin-bottom: 0.5rem;
+            padding: 0.5rem 0.6rem;
+            width: auto;
+            min-width: 40px;
+        }
+        
+        .btn-action i {
+            font-size: 1.1rem;
+        }
+        
+        /* Ocultar info box en móvil cuando hay resultados */
+        body:has(.results-header) .info-box {
+            display: none;
+        }
+        
+        /* Ajustes de tarjetas */
+        .certificate-card {
+            margin-bottom: 0.75rem;
+        }
+        
+        .certificate-card .card-body {
+            padding: 0.75rem !important;
+        }
+        
+        .event-name {
+            font-size: 0.85rem;
+        }
+        
+        .event-meta {
+            font-size: 0.75rem;
+        }
+        
+        .badge-type {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.4rem;
+        }
+        
+        .results-header {
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .results-header h5 {
+            font-size: 0.9rem;
+        }
+        
+        .results-header .badge {
+            font-size: 0.7rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+{% if not certificates %}
 <div class="hero-section text-center">
     <div class="container">
         <h1 class="display-5 fw-bold mb-3">
@@ -237,6 +314,7 @@
         </p>
     </div>
 </div>
+{% endif %}
 
 <div class="row justify-content-center">
     <div class="col-lg-6 col-md-8">
@@ -347,12 +425,12 @@
                             <a href="{% url 'certificates:download' certificate.uuid %}" 
                                class="btn btn-download btn-action btn-sm text-nowrap"
                                title="Descargar certificado en PDF">
-                                <i class="bi bi-download"></i> Descargar
+                                <i class="bi bi-download"></i><span class="btn-text"> Descargar</span>
                             </a>
                             <a href="{% url 'certificates:verify' certificate.uuid %}" 
                                class="btn btn-verify btn-action btn-sm text-nowrap"
                                title="Ver detalles y verificar autenticidad">
-                                <i class="bi bi-shield-check"></i> Verificar
+                                <i class="bi bi-shield-check"></i><span class="btn-text"> Verificar</span>
                             </a>
                         </div>
                     </div>
