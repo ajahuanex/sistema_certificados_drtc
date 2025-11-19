@@ -154,6 +154,17 @@
         font-weight: 600;
     }
     
+    a.badge-type {
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    a.badge-type:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+        filter: brightness(1.1);
+    }
+    
     .btn-action {
         padding: 0.4rem 0.8rem;
         font-size: 0.85rem;
@@ -317,15 +328,13 @@
                                         <i class="bi bi-gear-fill"></i> Organizador
                                     </span>
                                 {% endif %}
-                                {% if certificate.is_signed %}
-                                    <span class="badge badge-type bg-success ms-1" title="Certificado con firma digital">
-                                        <i class="bi bi-shield-fill-check"></i> Firmado
-                                    </span>
-                                {% else %}
-                                    <span class="badge badge-type bg-secondary ms-1" title="Certificado sin firma digital">
-                                        <i class="bi bi-shield"></i> Sin Firmar
-                                    </span>
-                                {% endif %}
+                                <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="badge badge-type bg-success ms-1 text-decoration-none" 
+                                   title="Verificar firma digital en FirmaPerú">
+                                    <i class="bi bi-shield-fill-check"></i> Firma Digital
+                                </a>
                             </div>
                         </div>
                         <div class="col-lg-6 col-md-12">

@@ -299,34 +299,20 @@
                         
                         <div class="info-item">
                             <div class="info-label">
-                                <i class="bi bi-shield-check me-2"></i>Estado de Firma Digital
+                                <i class="bi bi-shield-check me-2"></i>Firma Digital
                             </div>
                             <div class="info-value">
-                                {% if certificate.is_signed %}
                                 <div class="signature-badge">
                                     <i class="bi bi-shield-fill-check me-2" style="font-size: 1.5rem;"></i>
-                                    <div class="fw-bold">FIRMADO DIGITALMENTE</div>
+                                    <div class="fw-bold">CONTIENE FIRMA DIGITAL</div>
                                     <div class="small mt-1">
-                                        Firmado el {{ certificate.signed_at|date:"d/m/Y \a \l\a\s H:i" }}
+                                        Este certificado está firmado digitalmente
                                     </div>
                                     <div class="small mt-2">
                                         <i class="bi bi-check-circle me-1"></i>
-                                        Este certificado tiene validez legal
+                                        Certificado con validez legal
                                     </div>
                                 </div>
-                                {% else %}
-                                <div class="signature-badge unsigned">
-                                    <i class="bi bi-shield me-2" style="font-size: 1.5rem;"></i>
-                                    <div class="fw-bold">SIN FIRMA DIGITAL</div>
-                                    <div class="small mt-1">
-                                        Este certificado aún no ha sido firmado digitalmente
-                                    </div>
-                                    <div class="small mt-2">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Pendiente de firma digital
-                                    </div>
-                                </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -337,7 +323,6 @@
                            target="_blank">
                             <i class="bi bi-download me-2"></i>Descargar PDF
                         </a>
-                        {% if certificate.is_signed %}
                         <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
                            class="btn btn-success btn-action-verify"
                            target="_blank"
@@ -349,7 +334,6 @@
                             <i class="bi bi-info-circle me-1"></i>
                             Descarga el PDF y súbelo al validador de FirmaPerú
                         </p>
-                        {% endif %}
                         <a href="{% url 'certificates:query' %}" class="btn btn-outline-secondary btn-action-verify">
                             <i class="bi bi-search me-2"></i>Buscar Otro Certificado
                         </a>
