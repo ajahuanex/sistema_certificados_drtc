@@ -224,12 +224,25 @@ class ParticipantAdmin(BaseAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
+                'import/',
+                self.admin_site.admin_view(self.import_view),
+                name='certificates_participant_import',
+            ),
+            path(
                 'import-csv/',
                 self.admin_site.admin_view(self.import_csv_view),
                 name='certificates_participant_import_csv',
             ),
         ]
         return custom_urls + urls
+    
+    def import_view(self, request):
+        """Vista unificada para importar participantes"""
+        context = {
+            'title': 'Importar Participantes',
+            'opts': Participant._meta,
+        }
+        return render(request, 'admin/certificates/import_participants.html', context)
     
     def import_csv_view(self, request):
         """Vista para importar participantes desde CSV"""

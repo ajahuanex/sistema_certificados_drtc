@@ -1,0 +1,319 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Importar Participantes | {{ site_title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .import-container {
+        max-width: 1200px;
+        margin: 20px auto;
+    }
+    
+    .import-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin: 30px 0;
+    }
+    
+    .import-card {
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .import-card:hover {
+        border-color: #417690;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .import-card.active {
+        border-color: #417690;
+        background: #f0f8ff;
+    }
+    
+    .import-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+    
+    .import-card h2 {
+        margin: 0 0 15px 0;
+        color: #333;
+    }
+    
+    .import-card p {
+        color: #666;
+        margin: 10px 0;
+    }
+    
+    .import-form {
+        display: none;
+        background: white;
+        border: 2px solid #417690;
+        border-radius: 8px;
+        padding: 30px;
+        margin-top: 30px;
+    }
+    
+    .import-form.active {
+        display: block;
+    }
+    
+    .upload-zone {
+        border: 3px dashed #ccc;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        background: #fafafa;
+        transition: all 0.3s;
+        cursor: pointer;
+        margin: 20px 0;
+    }
+    
+    .upload-zone:hover {
+        border-color: #417690;
+        background: #f0f8ff;
+    }
+    
+    .upload-zone.dragover {
+        border-color: #2196F3;
+        background: #e3f2fd;
+    }
+    
+    .btn-primary {
+        background: #417690;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        margin: 10px 5px;
+    }
+    
+    .btn-primary:hover {
+        background: #2e5266;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 10px 5px;
+    }
+    
+    .format-info {
+        background: #e7f3fe;
+        border-left: 4px solid #2196F3;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+    
+    .format-info h3 {
+        margin-top: 0;
+    }
+    
+    .format-info code {
+        background: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Inicio</a>
+    &rsaquo; <a href="{% url 'admin:certificates_participant_changelist' %}">Participantes</a>
+    &rsaquo; Importar
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="import-container">
+    <h1>📥 Importar Participantes</h1>
+    <p>Selecciona el formato de archivo que deseas importar:</p>
+    
+    <div class="import-options">
+        <div class="import-card" onclick="selectFormat('excel')">
+            <div class="import-icon">📊</div>
+            <h2>Excel (.xlsx)</h2>
+            <p>Importa desde archivo Excel</p>
+            <p><small>Formato tradicional con múltiples columnas</small></p>
+        </div>
+        
+        <div class="import-card" onclick="selectFormat('csv')">
+            <div class="import-icon">📄</div>
+            <h2>CSV (.csv)</h2>
+            <p>Importa desde archivo CSV</p>
+            <p><small>Formato simple separado por comas</small></p>
+        </div>
+    </div>
+    
+    <!-- Formulario Excel -->
+    <div id="excel-form" class="import-form">
+        <h2>📊 Importar desde Excel</h2>
+        
+        <div class="format-info">
+            <h3>Formato requerido:</h3>
+            <p>Columnas: <code>DNI</code>, <code>Nombres y Apellidos</code>, <code>Fecha del Evento</code>, <code>Tipo de Asistente</code>, <code>Nombre del Evento</code></p>
+            <p><strong>Tipos válidos:</strong> ASISTENTE, PONENTE, ORGANIZADOR</p>
+            <p><strong>Fecha:</strong> DD/MM/YYYY</p>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" action="{% url 'certificates:import_excel' %}">
+            {% csrf_token %}
+            <div class="upload-zone" id="excel-upload" onclick="document.getElementById('excel-file').click()">
+                <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
+                <h3>Arrastra tu archivo Excel aquí o haz clic para seleccionar</h3>
+                <p style="color: #666; margin-top: 10px;">Formatos: .xlsx, .xls | Máximo: 10MB</p>
+                <input type="file" name="excel_file" id="excel-file" accept=".xlsx,.xls" style="display: none;" required>
+                <div id="excel-filename" style="margin-top: 15px; font-weight: 600; color: #417690;"></div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <label style="display: inline-block; margin-right: 20px;">
+                    <input type="checkbox" name="validate_only" value="true"> Solo validar (no importar)
+                </label>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" class="btn-primary">✅ Procesar Archivo</button>
+                <a href="{% url 'admin:certificates_participant_changelist' %}" class="btn-secondary">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Formulario CSV -->
+    <div id="csv-form" class="import-form">
+        <h2>📄 Importar desde CSV</h2>
+        
+        <div class="format-info">
+            <h3>Formato requerido:</h3>
+            <p>Columnas: <code>DNI</code>, <code>Nombres y Apellidos</code>, <code>Fecha del Evento</code>, <code>Tipo de Asistente</code>, <code>Nombre del Evento</code></p>
+            <p><strong>Tipos válidos:</strong> ASISTENTE, PONENTE, ORGANIZADOR</p>
+            <p><strong>Fecha:</strong> DD/MM/YYYY</p>
+            <p><strong>Ejemplo:</strong></p>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; text-align: left;">DNI,Nombres y Apellidos,Fecha del Evento,Tipo de Asistente,Nombre del Evento
+12345678,Juan Pérez García,15/11/2025,ASISTENTE,Capacitación 2025</pre>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" action="{% url 'admin:certificates_participant_import_csv' %}">
+            {% csrf_token %}
+            <div class="upload-zone" id="csv-upload" onclick="document.getElementById('csv-file').click()">
+                <div style="font-size: 48px; margin-bottom: 15px;">📄</div>
+                <h3>Arrastra tu archivo CSV aquí o haz clic para seleccionar</h3>
+                <p style="color: #666; margin-top: 10px;">Formato: .csv | Máximo: 10MB</p>
+                <input type="file" name="csv_file" id="csv-file" accept=".csv" style="display: none;" required>
+                <div id="csv-filename" style="margin-top: 15px; font-weight: 600; color: #417690;"></div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <label style="display: inline-block; margin-right: 20px;">
+                    <input type="checkbox" name="validate_only" value="true"> Solo validar (no importar)
+                </label>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" class="btn-primary">✅ Procesar Archivo</button>
+                <a href="{% url 'admin:certificates_participant_changelist' %}" class="btn-secondary">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function selectFormat(format) {
+    // Remover active de todas las tarjetas
+    document.querySelectorAll('.import-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Ocultar todos los formularios
+    document.querySelectorAll('.import-form').forEach(form => {
+        form.classList.remove('active');
+    });
+    
+    // Activar la tarjeta seleccionada
+    event.currentTarget.classList.add('active');
+    
+    // Mostrar el formulario correspondiente
+    document.getElementById(format + '-form').classList.add('active');
+    
+    // Scroll suave al formulario
+    document.getElementById(format + '-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Drag & drop para Excel
+const excelUpload = document.getElementById('excel-upload');
+const excelFile = document.getElementById('excel-file');
+const excelFilename = document.getElementById('excel-filename');
+
+excelUpload.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    excelUpload.classList.add('dragover');
+});
+
+excelUpload.addEventListener('dragleave', () => {
+    excelUpload.classList.remove('dragover');
+});
+
+excelUpload.addEventListener('drop', (e) => {
+    e.preventDefault();
+    excelUpload.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+        excelFile.files = e.dataTransfer.files;
+        excelFilename.textContent = `📊 ${e.dataTransfer.files[0].name}`;
+    }
+});
+
+excelFile.addEventListener('change', () => {
+    if (excelFile.files.length) {
+        excelFilename.textContent = `📊 ${excelFile.files[0].name}`;
+    }
+});
+
+// Drag & drop para CSV
+const csvUpload = document.getElementById('csv-upload');
+const csvFile = document.getElementById('csv-file');
+const csvFilename = document.getElementById('csv-filename');
+
+csvUpload.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    csvUpload.classList.add('dragover');
+});
+
+csvUpload.addEventListener('dragleave', () => {
+    csvUpload.classList.remove('dragover');
+});
+
+csvUpload.addEventListener('drop', (e) => {
+    e.preventDefault();
+    csvUpload.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+        csvFile.files = e.dataTransfer.files;
+        csvFilename.textContent = `📄 ${e.dataTransfer.files[0].name}`;
+    }
+});
+
+csvFile.addEventListener('change', () => {
+    if (csvFile.files.length) {
+        csvFilename.textContent = `📄 ${csvFile.files[0].name}`;
+    }
+});
+</script>
+{% endblock %}
