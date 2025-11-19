@@ -17,13 +17,7 @@ from .models import (
 # Configuración global de Media para todos los admins
 class BaseAdmin(admin.ModelAdmin):
     """Base admin con CSS personalizado"""
-    class Media:
-        css = {
-            'all': (
-                'admin/css/custom_admin.css',
-                'admin/css/fix-header-contrast.css',  # FIX CRÍTICO - Se carga al final
-            )
-        }
+    pass
 
 
 @admin.register(Event)
@@ -317,8 +311,6 @@ class CertificateAdmin(BaseAdmin):
     class Media:
         css = {
             'all': (
-                'admin/css/custom_admin.css',
-                'admin/css/fix-header-contrast.css',
                 'admin/css/certificate_list.css',
             )
         }
