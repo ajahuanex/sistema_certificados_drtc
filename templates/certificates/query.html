@@ -238,6 +238,10 @@
             gap: 0.5rem;
         }
         
+        .search-input-group .dni-input {
+            flex: 1;
+        }
+        
         .dni-label {
             display: none;
         }
@@ -246,7 +250,6 @@
             font-size: 0.9rem;
             padding: 0.5rem;
             letter-spacing: 1px;
-            flex: 1;
         }
         
         .btn-search {
@@ -266,6 +269,29 @@
         
         .dni-help {
             display: none;
+        }
+    }
+    
+    /* Desktop: diseño normal */
+    @media (min-width: 769px) {
+        .search-input-group {
+            display: block;
+        }
+        
+        .dni-label {
+            display: block !important;
+        }
+        
+        .btn-search-text {
+            display: inline !important;
+        }
+        
+        .btn-search i {
+            margin-right: 0.5rem !important;
+        }
+        
+        .dni-help {
+            display: block !important;
         }
         
         /* Botones solo con iconos en móvil */
@@ -336,8 +362,7 @@
 {% endblock %}
 
 {% block content %}
-{% if not certificates %}
-<div class="hero-section text-center">
+<div class="hero-section text-center {% if certificates %}d-none d-md-block{% endif %}">
     <div class="container">
         <h1 class="display-5 fw-bold mb-3">
             <i class="bi bi-search me-2"></i>Consultar Certificado
@@ -347,7 +372,6 @@
         </p>
     </div>
 </div>
-{% endif %}
 
 <div class="row justify-content-center">
     <div class="col-lg-6 col-md-8">
