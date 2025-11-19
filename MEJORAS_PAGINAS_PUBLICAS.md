@@ -123,7 +123,40 @@ ssh administrador@161.132.47.92 "cd dockers/sistema_certificados_drtc && \
 - Todos los estilos son inline en los templates
 - Mantiene compatibilidad con Bootstrap 5 y Bootstrap Icons
 
+## 🔄 Actualización: Estado de Firma Digital
+
+### Cambios Adicionales Implementados
+
+1. **Todos los certificados muestran estado de firma**:
+   - Badge "Firmado" (verde) para certificados con firma digital
+   - Badge "Sin Firmar" (gris) para certificados sin firma digital
+   - Tooltips explicativos en ambos badges
+
+2. **Código QR solo para certificados internos**:
+   - Los certificados externos (`is_external=True`) no muestran QR
+   - El QR se implementará después para certificados externos
+   - Condición: `{% if certificate.qr_code and not certificate.is_external %}`
+
+3. **Mejora en página de verificación**:
+   - Mensaje adicional en certificados sin firmar: "Pendiente de firma digital"
+   - Información más clara sobre el estado de firma
+
+### Comandos de Despliegue
+
+```bash
+# Copiar archivos actualizados
+scp templates/certificates/query.html administrador@161.132.47.92:~/
+scp templates/certificates/verify.html administrador@161.132.47.92:~/
+
+# Actualizar en contenedor
+ssh administrador@161.132.47.92 "cd dockers/sistema_certificados_drtc && \
+  docker cp ~/query.html certificados_web:/app/templates/certificates/ && \
+  docker cp ~/verify.html certificados_web:/app/templates/certificates/ && \
+  docker compose restart web"
+```
+
 ---
 
 **Estado**: ✅ Desplegado en producción
 **Fecha de despliegue**: 19/11/2025
+**Última actualización**: 19/11/2025 - Estado firma digital y QR condicional
