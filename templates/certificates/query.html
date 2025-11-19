@@ -131,6 +131,12 @@
         transform: translateY(-2px);
     }
     
+    .event-name-container {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin-right: 1rem;
+    }
+    
     .event-name {
         color: #212529;
         font-weight: 600;
@@ -139,7 +145,14 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 100%;
+        display: flex;
+        align-items: center;
+    }
+    
+    .event-name span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     
     .event-meta {
@@ -300,10 +313,10 @@
             <div class="certificate-card card">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <div class="flex-grow-1" style="min-width: 200px; max-width: 60%;">
+                        <div class="event-name-container">
                             <div class="event-name" title="{{ certificate.participant.event.name }}">
                                 <i class="bi bi-calendar-event me-1 text-primary"></i>
-                                {{ certificate.participant.event.name }}
+                                <span>{{ certificate.participant.event.name }}</span>
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
