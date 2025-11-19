@@ -294,7 +294,16 @@
             display: block !important;
         }
         
-        /* Botones solo con iconos en móvil */
+        /* Botón centrado en desktop */
+        .d-none.d-md-block .btn-search {
+            display: block;
+            width: auto;
+            margin: 1rem auto 0;
+        }
+    }
+    
+    /* Botones solo con iconos en móvil */
+    @media (max-width: 768px) {
         .btn-action .btn-text {
             display: none;
         }
@@ -374,7 +383,7 @@
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-lg-6 col-md-8">
+    <div class="col-lg-6 col-md-8" id="search-container">
         <div class="card search-card">
             <div class="card-header">
                 <i class="bi bi-card-text me-2"></i>Búsqueda por DNI
@@ -409,10 +418,16 @@
                                 {{ form.dni.errors.0 }}
                             </div>
                         {% endif %}
-                        <div class="form-text dni-help">
+                        <div class="form-text dni-help text-center">
                             <i class="bi bi-info-circle me-1"></i>
                             Ingrese su DNI de 8 dígitos sin espacios ni guiones
                         </div>
+                    </div>
+                    
+                    <div class="d-none d-md-block">
+                        <button type="submit" class="btn btn-primary btn-lg btn-search">
+                            <i class="bi bi-search me-2"></i><span class="btn-search-text">Buscar Certificados</span>
+                        </button>
                     </div>
                 </form>
                 
@@ -433,6 +448,11 @@
         </div>
         
         {% if certificates %}
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
         <div class="mt-4">
             <div class="results-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -495,8 +515,14 @@
             </div>
             {% endfor %}
         </div>
+        </div>
         {% endif %}
-        
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        {% if not certificates %}
         <div class="info-box">
             <h6 class="fw-semibold mb-2">
                 <i class="bi bi-lightbulb-fill me-2"></i>¿Cómo funciona?
