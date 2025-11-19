@@ -136,7 +136,10 @@
         font-weight: 600;
         font-size: 0.9rem;
         line-height: 1.4;
-        display: inline;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
     
     .event-meta {
@@ -297,16 +300,10 @@
             <div class="certificate-card card">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <div class="flex-grow-1" style="min-width: 300px;">
-                            <div class="event-name">
+                        <div class="flex-grow-1" style="min-width: 200px; max-width: 60%;">
+                            <div class="event-name" title="{{ certificate.participant.event.name }}">
                                 <i class="bi bi-calendar-event me-1 text-primary"></i>
-                                {% if certificate.participant.event.name|length > 100 %}
-                                    <span title="{{ certificate.participant.event.name }}">
-                                        {{ certificate.participant.event.name|slice:":100" }}...
-                                    </span>
-                                {% else %}
-                                    {{ certificate.participant.event.name }}
-                                {% endif %}
+                                {{ certificate.participant.event.name }}
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
