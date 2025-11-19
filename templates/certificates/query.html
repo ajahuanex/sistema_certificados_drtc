@@ -225,8 +225,7 @@
         }
         
         .search-card .card-header {
-            padding: 0.75rem;
-            font-size: 0.9rem;
+            display: none;
         }
         
         .search-card .card-body {
@@ -256,7 +255,16 @@
         }
         
         .btn-action i {
-            font-size: 1.1rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Badge firma digital sin texto en móvil */
+        a.badge-type .badge-text {
+            display: none;
+        }
+        
+        a.badge-type {
+            padding: 0.35rem 0.5rem;
         }
         
         /* Ocultar info box en móvil cuando hay resultados */
@@ -420,7 +428,7 @@
                                rel="noopener noreferrer"
                                class="badge badge-type bg-success text-decoration-none text-nowrap" 
                                title="Verificar firma digital en FirmaPerú">
-                                <i class="bi bi-shield-fill-check"></i> Firma Digital
+                                <i class="bi bi-shield-fill-check"></i><span class="badge-text"> Firma Digital</span>
                             </a>
                             <a href="{% url 'certificates:download' certificate.uuid %}" 
                                class="btn btn-download btn-action btn-sm text-nowrap"
