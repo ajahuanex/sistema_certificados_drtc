@@ -229,18 +229,43 @@
         }
         
         .search-card .card-body {
-            padding: 1rem !important;
+            padding: 0.75rem !important;
+        }
+        
+        /* Input y botón en la misma línea en móvil */
+        .search-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .dni-label {
+            display: none;
         }
         
         .dni-input {
-            font-size: 1rem;
-            padding: 0.6rem;
-            letter-spacing: 2px;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            letter-spacing: 1px;
+            flex: 1;
         }
         
         .btn-search {
-            padding: 0.6rem 1.5rem;
-            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        
+        .btn-search-text {
+            display: none;
+        }
+        
+        .btn-search i {
+            margin: 0 !important;
+            font-size: 1.1rem;
+        }
+        
+        .dni-help {
+            display: none;
         }
         
         /* Botones solo con iconos en móvil */
@@ -335,35 +360,35 @@
                     {% csrf_token %}
                     
                     <div class="mb-4">
-                        <label for="{{ form.dni.id_for_label }}" class="form-label fw-semibold">
+                        <label for="{{ form.dni.id_for_label }}" class="form-label fw-semibold dni-label">
                             Número de DNI
                         </label>
-                        <input 
-                            type="text" 
-                            name="{{ form.dni.name }}"
-                            id="{{ form.dni.id_for_label }}"
-                            class="form-control form-control-lg dni-input {% if form.dni.errors %}is-invalid{% endif %}"
-                            maxlength="8"
-                            pattern="\d{8}"
-                            required
-                            autofocus
-                            value="{{ dni|default:'' }}"
-                        >
+                        <div class="search-input-group">
+                            <input 
+                                type="text" 
+                                name="{{ form.dni.name }}"
+                                id="{{ form.dni.id_for_label }}"
+                                class="form-control form-control-lg dni-input {% if form.dni.errors %}is-invalid{% endif %}"
+                                maxlength="8"
+                                pattern="\d{8}"
+                                required
+                                autofocus
+                                value="{{ dni|default:'' }}"
+                                placeholder="DNI"
+                            >
+                            <button type="submit" class="btn btn-primary btn-lg btn-search">
+                                <i class="bi bi-search me-2"></i><span class="btn-search-text">Buscar Certificados</span>
+                            </button>
+                        </div>
                         {% if form.dni.errors %}
                             <div class="invalid-feedback">
                                 {{ form.dni.errors.0 }}
                             </div>
                         {% endif %}
-                        <div class="form-text">
+                        <div class="form-text dni-help">
                             <i class="bi bi-info-circle me-1"></i>
                             Ingrese su DNI de 8 dígitos sin espacios ni guiones
                         </div>
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg btn-search">
-                            <i class="bi bi-search me-2"></i>Buscar Certificados
-                        </button>
                     </div>
                 </form>
                 
