@@ -232,14 +232,9 @@
             padding: 0.75rem !important;
         }
         
-        /* Input y botón en la misma línea en móvil */
+        /* Botón de búsqueda en móvil */
         .search-input-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .search-input-group .dni-input {
-            flex: 1;
+            margin-top: 0.5rem;
         }
         
         .dni-label {
@@ -253,18 +248,13 @@
         }
         
         .btn-search {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-        
-        .btn-search-text {
-            display: none;
+            width: 100%;
+            padding: 0.6rem;
+            font-size: 0.9rem;
         }
         
         .btn-search i {
-            margin: 0 !important;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
         
         .dni-help {
@@ -274,31 +264,16 @@
     
     /* Desktop: diseño normal */
     @media (min-width: 769px) {
-        .search-input-group {
-            display: block;
-        }
-        
         .dni-label {
             display: block !important;
-        }
-        
-        .btn-search-text {
-            display: inline !important;
-        }
-        
-        .btn-search i {
-            margin-right: 0.5rem !important;
         }
         
         .dni-help {
             display: block !important;
         }
         
-        /* Botón centrado en desktop */
-        .d-none.d-md-block .btn-search {
-            display: block;
-            width: auto;
-            margin: 1rem auto 0;
+        .btn-search-desktop {
+            padding: 0.75rem 2rem;
         }
     }
     
@@ -396,21 +371,21 @@
                         <label for="{{ form.dni.id_for_label }}" class="form-label fw-semibold dni-label">
                             Número de DNI
                         </label>
-                        <div class="search-input-group">
-                            <input 
-                                type="text" 
-                                name="{{ form.dni.name }}"
-                                id="{{ form.dni.id_for_label }}"
-                                class="form-control form-control-lg dni-input {% if form.dni.errors %}is-invalid{% endif %}"
-                                maxlength="8"
-                                pattern="\d{8}"
-                                required
-                                autofocus
-                                value="{{ dni|default:'' }}"
-                                placeholder="DNI"
-                            >
-                            <button type="submit" class="btn btn-primary btn-lg btn-search">
-                                <i class="bi bi-search me-2"></i><span class="btn-search-text">Buscar Certificados</span>
+                        <input 
+                            type="text" 
+                            name="{{ form.dni.name }}"
+                            id="{{ form.dni.id_for_label }}"
+                            class="form-control form-control-lg dni-input {% if form.dni.errors %}is-invalid{% endif %}"
+                            maxlength="8"
+                            pattern="\d{8}"
+                            required
+                            autofocus
+                            value="{{ dni|default:'' }}"
+                            placeholder="DNI"
+                        >
+                        <div class="search-input-group d-md-none">
+                            <button type="submit" class="btn btn-primary btn-search">
+                                <i class="bi bi-search"></i>
                             </button>
                         </div>
                         {% if form.dni.errors %}
@@ -424,9 +399,9 @@
                         </div>
                     </div>
                     
-                    <div class="d-none d-md-block">
-                        <button type="submit" class="btn btn-primary btn-lg btn-search">
-                            <i class="bi bi-search me-2"></i><span class="btn-search-text">Buscar Certificados</span>
+                    <div class="d-none d-md-block text-center mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg btn-search-desktop">
+                            <i class="bi bi-search me-2"></i>Buscar Certificados
                         </button>
                     </div>
                 </form>
