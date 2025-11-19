@@ -79,6 +79,8 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_HSTS_SECONDS = env.int('SECURE_HSTS_SECONDS', default=0)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False)
 SECURE_HSTS_PRELOAD = env.bool('SECURE_HSTS_PRELOAD', default=False)
+# Desactivar COOP para HTTP (solo funciona con HTTPS)
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # Static files with WhiteNoise
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
