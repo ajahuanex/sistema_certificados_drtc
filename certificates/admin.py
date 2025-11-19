@@ -313,6 +313,15 @@ class ParticipantAdmin(BaseAdmin):
 @admin.register(Certificate)
 class CertificateAdmin(BaseAdmin):
     """Administración de certificados"""
+    
+    class Media:
+        css = {
+            'all': (
+                'admin/css/custom_admin.css',
+                'admin/css/fix-header-contrast.css',
+                'admin/css/certificate_list.css',
+            )
+        }
 
     list_display = [
         "uuid_short",
@@ -396,8 +405,15 @@ class CertificateAdmin(BaseAdmin):
     participant_dni.short_description = "DNI"
 
     def event_name(self, obj):
-        """Nombre del evento"""
-        return obj.participant.event.name
+        """Nombre del evento truncado"""
+        name = obj.participant.event.name
+        if len(name) > 40:
+            return format_html(
+                '<span title="{}">{}</span>',
+                name,
+                name[:40] + '...'
+            )
+        return name
 
     event_name.short_description = "Evento"
 
