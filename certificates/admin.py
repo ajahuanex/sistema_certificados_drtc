@@ -218,6 +218,76 @@ class ParticipantAdmin(BaseAdmin):
             messages.SUCCESS
         )
     
+    def get_urls(self):
+        """Agregar URLs personalizadas"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'import-csv/',
+                self.admin_site.admin_view(self.import_csv_view),
+                name='certificates_participant_import_csv',
+            ),
+        ]
+        return custom_urls + urls
+    
+    def import_csv_view(self, request):
+        """Vista para importar participantes desde CSV"""
+        from certificates.forms import CSVImportForm
+        from certificates.services.csv_processor import CSVProcessorService
+        
+        if request.method == 'POST':
+            form = CSVImportForm(request.POST, request.FILES)
+            if form.is_valid():
+                csv_file = form.cleaned_data['csv_file']
+                validate_only = form.cleaned_data.get('validate_only', False)
+                
+                service = CSVProcessorService()
+                
+                if validate_only:
+                    # Solo validar
+                    is_valid, messages_list, validated_rows = service.validate_file(csv_file)
+                    
+                    context = {
+                        'title': 'Validación de Archivo CSV',
+                        'is_valid': is_valid,
+                        'messages': messages_list,
+                        'validated_rows': validated_rows,
+                        'total_rows': len(validated_rows),
+                        'opts': Participant._meta,
+                    }
+                    
+                    return render(request, 'admin/certificates/csv_validation_result.html', context)
+                else:
+                    # Importar
+                    result = service.process_csv(csv_file, user=request.user)
+                    
+                    if result['success_count'] > 0:
+                        messages.success(
+                            request,
+                            f"✓ Se importaron {result['success_count']} participantes exitosamente"
+                        )
+                    
+                    if result['error_count'] > 0:
+                        messages.warning(
+                            request,
+                            f"⚠ Se encontraron {result['error_count']} errores"
+                        )
+                        for error in result['errors'][:5]:
+                            messages.error(request, error)
+                    
+                    return redirect('admin:certificates_participant_changelist')
+        else:
+            form = CSVImportForm()
+        
+        context = {
+            'title': 'Importar Participantes desde CSV',
+            'form': form,
+            'opts': Participant._meta,
+        }
+        
+        return render(request, 'admin/certificates/csv_import.html', context)
+    
     def get_actions(self, request):
         """Personalizar acciones disponibles"""
         actions = super().get_actions(request)

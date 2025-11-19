@@ -39,6 +39,46 @@ class ExcelImportForm(forms.Form):
         return excel_file
 
 
+class CSVImportForm(forms.Form):
+    """Formulario para importar archivo CSV con participantes"""
+
+    csv_file = forms.FileField(
+        label="Archivo CSV",
+        help_text="Seleccione un archivo CSV con los datos de los participantes",
+        widget=forms.FileInput(attrs={"accept": ".csv", "class": "form-control"}),
+    )
+    
+    validate_only = forms.BooleanField(
+        label="Solo validar (no importar)",
+        required=False,
+        initial=False,
+        help_text="Marque esta opción para solo validar el archivo sin importar los datos",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def clean_csv_file(self):
+        """Valida el archivo CSV"""
+        csv_file = self.cleaned_data.get("csv_file")
+
+        if not csv_file:
+            raise ValidationError("Debe seleccionar un archivo")
+
+        # Validar extensión
+        if not csv_file.name.lower().endswith('.csv'):
+            raise ValidationError(
+                "Formato de archivo no válido. Solo se permiten archivos .csv"
+            )
+
+        # Validar tamaño máximo (10MB)
+        max_size = 10 * 1024 * 1024  # 10MB en bytes
+        if csv_file.size > max_size:
+            raise ValidationError(
+                f"El archivo es demasiado grande. Tamaño máximo: 10MB. Tamaño actual: {csv_file.size / (1024 * 1024):.2f}MB"
+            )
+
+        return csv_file
+
+
 class DNIQueryForm(forms.Form):
     """Formulario para consultar certificados por DNI"""
 

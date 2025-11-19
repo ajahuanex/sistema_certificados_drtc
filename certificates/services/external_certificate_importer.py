@@ -115,7 +115,7 @@ class ExternalCertificateImporter:
     def _process_row(self, row, col_indices, row_num):
         """Procesa una fila individual del Excel"""
         # Extraer datos
-        dni = str(row[col_indices['DNI']]).strip()
+        dni_raw = str(row[col_indices['DNI']]).strip()
         full_name = str(row[col_indices['Nombres y Apellidos']]).strip()
         event_date_value = row[col_indices['Fecha del Evento']]
         attendee_type = str(row[col_indices['Tipo de Asistente']]).strip().upper()
@@ -128,8 +128,11 @@ class ExternalCertificateImporter:
             external_system = str(row[col_indices['Sistema Externo']] or '').strip()
         
         # Validar datos
-        self._validate_row_data(dni, full_name, event_date_value, attendee_type, 
+        self._validate_row_data(dni_raw, full_name, event_date_value, attendee_type, 
                                event_name, certificate_url, row_num)
+        
+        # Normalizar DNI con ceros a la izquierda
+        dni = self._normalize_dni(dni_raw)
         
         # Parsear fecha
         event_date = self._parse_date(event_date_value, row_num)
@@ -226,14 +229,24 @@ class ExternalCertificateImporter:
             self.success_count += 1
             logger.info(f"Certificado externo creado para {full_name} ({dni})")
     
+    def _normalize_dni(self, dni):
+        """Normaliza el DNI rellenando con ceros a la izquierda"""
+        # Remover cualquier caracter no numérico
+        dni_clean = ''.join(filter(str.isdigit, str(dni)))
+        # Rellenar con ceros a la izquierda hasta 8 dígitos
+        return dni_clean.zfill(8) if dni_clean else ''
+    
     def _validate_row_data(self, dni, full_name, event_date, attendee_type, 
                           event_name, certificate_url, row_num):
         """Valida los datos de una fila"""
         errors = []
         
-        # Validar DNI
-        if not dni or len(dni) != 8 or not dni.isdigit():
-            errors.append(f"DNI inválido: {dni}")
+        # Validar DNI (debe tener entre 1 y 8 dígitos numéricos)
+        dni_clean = ''.join(filter(str.isdigit, str(dni)))
+        if not dni_clean:
+            errors.append(f"DNI inválido: {dni} (debe contener dígitos numéricos)")
+        elif len(dni_clean) > 8:
+            errors.append(f"DNI inválido: {dni} (no puede tener más de 8 dígitos)")
         
         # Validar nombre
         if not full_name:
