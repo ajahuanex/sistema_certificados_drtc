@@ -81,6 +81,16 @@
         border-radius: 8px;
         text-align: center;
         margin-top: 0.5rem;
+        display: block;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    a.signature-badge:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(40, 167, 69, 0.4);
+        color: white;
     }
     
     .signature-badge.unsigned {
@@ -262,16 +272,7 @@
                             </div>
                         </div>
                         
-                        {% if certificate.participant.event.description %}
-                        <div class="info-item">
-                            <div class="info-label">
-                                <i class="bi bi-info-circle me-2"></i>Descripción
-                            </div>
-                            <div class="info-value">
-                                {{ certificate.participant.event.description }}
-                            </div>
-                        </div>
-                        {% endif %}
+
                     </div>
                     
                     <div class="info-section">
@@ -302,7 +303,11 @@
                                 <i class="bi bi-shield-check me-2"></i>Firma Digital
                             </div>
                             <div class="info-value">
-                                <div class="signature-badge">
+                                <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="signature-badge text-decoration-none"
+                                   title="Click para verificar en FirmaPerú">
                                     <i class="bi bi-shield-fill-check me-2" style="font-size: 1.5rem;"></i>
                                     <div class="fw-bold">CONTIENE FIRMA DIGITAL</div>
                                     <div class="small mt-1">
@@ -310,9 +315,9 @@
                                     </div>
                                     <div class="small mt-2">
                                         <i class="bi bi-check-circle me-1"></i>
-                                        Certificado con validez legal
+                                        Certificado con validez legal • Click para verificar
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         </div>
                     </div>
