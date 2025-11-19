@@ -318,8 +318,12 @@
                                     </span>
                                 {% endif %}
                                 {% if certificate.is_signed %}
-                                    <span class="badge badge-type bg-success ms-1">
+                                    <span class="badge badge-type bg-success ms-1" title="Certificado con firma digital">
                                         <i class="bi bi-shield-fill-check"></i> Firmado
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-type bg-secondary ms-1" title="Certificado sin firma digital">
+                                        <i class="bi bi-shield"></i> Sin Firmar
                                     </span>
                                 {% endif %}
                             </div>

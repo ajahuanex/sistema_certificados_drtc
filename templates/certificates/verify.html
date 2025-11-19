@@ -321,6 +321,10 @@
                                     <div class="small mt-1">
                                         Este certificado aún no ha sido firmado digitalmente
                                     </div>
+                                    <div class="small mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Pendiente de firma digital
+                                    </div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -353,7 +357,7 @@
                 </div>
             </div>
             
-            {% if certificate.qr_code %}
+            {% if certificate.qr_code and not certificate.is_external %}
             <div class="qr-section mt-3">
                 <h6 class="mb-2 fw-bold">
                     <i class="bi bi-qr-code me-2"></i>Código QR
