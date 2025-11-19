@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block extrastyle %}
-    <link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}?v=20251118">
     <style>
         /* Fix crítico para header - inline para máxima prioridad */
         #header {
@@ -252,7 +252,7 @@
 
 {% block extrajs %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="{% static 'admin/js/dashboard.js' %}"></script>
+    <script src="{% static 'admin/js/dashboard.js' %}?v=20251118"></script>
     <script>
         // Pasar datos de Django a JavaScript de forma segura
         const dashboardData = {

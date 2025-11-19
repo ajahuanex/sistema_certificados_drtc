@@ -1,0 +1,11 @@
+ACCIÓN INMEDIATA - SIN TEXTO EXTRA
+
+1. Abre modo incógnito: Ctrl + Shift + N
+2. Ve a: https://certificados.transportespuno.gob.pe/admin/
+3. Login
+4. Prueba importaciones
+
+Si funciona en incógnito = problema de cache
+Si NO funciona en incógnito = problema del servidor
+
+Estoy reconstruyendo la imagen Docker ahora (tarda 5-10 min)

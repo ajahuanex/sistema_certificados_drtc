@@ -3,88 +3,491 @@
 
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
+{% block extrastyle %}
+<style>
+    .csv-import-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .upload-zone {
+        border: 3px dashed #ccc;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        background: #fafafa;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .upload-zone:hover {
+        border-color: #417690;
+        background: #f0f8ff;
+    }
+    
+    .upload-zone.dragover {
+        border-color: #2196F3;
+        background: #e3f2fd;
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+    
+    .format-example {
+        background: #f5f5f5;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 15px 0;
+        font-family: monospace;
+        font-size: 13px;
+        text-align: left;
+    }
+    
+    .validation-preview {
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .validation-preview table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .validation-preview th {
+        background: #417690;
+        color: white;
+        padding: 10px;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    .validation-preview td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .validation-preview tr:hover {
+        background: #f9f9f9;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .status-valid {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .quick-stats {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .stat-card {
+        flex: 1;
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+    }
+    
+    .stat-card.success {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+    }
+    
+    .stat-card.warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .stat-card.error {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin: 5px 0;
+    }
+    
+    .stat-label {
+        font-size: 13px;
+        color: #666;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .btn-primary {
+        background: #417690;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .btn-primary:hover {
+        background: #2e5266;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .compact-info {
+        background: #e7f3fe;
+        border-left: 4px solid #2196F3;
+        padding: 12px 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+    }
+    
+    .compact-info p {
+        margin: 5px 0;
+        font-size: 13px;
+    }
+</style>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumbs">
     <a href="{% url 'admin:index' %}">Inicio</a>
     &rsaquo; <a href="{% url 'admin:certificates_participant_changelist' %}">Participantes</a>
-    &rsaquo; Importar desde CSV
+    &rsaquo; Importar CSV
 </div>
 {% endblock %}
 
 {% block content %}
-<div id="content-main">
-    <h1>{{ title }}</h1>
+<div id="content-main" class="csv-import-container">
+    <h1>📥 Importar Participantes desde CSV</h1>
     
-    <div class="module" style="margin-bottom: 20px; padding: 15px; background-color: #e7f3fe; border-left: 4px solid #2196F3;">
-        <h2 style="margin-top: 0;">📋 Instrucciones</h2>
-        <p>El archivo CSV debe contener las siguientes columnas:</p>
-        <ul>
-            <li><strong>DNI</strong>: Número de DNI (se normalizará automáticamente con ceros a la izquierda)</li>
-            <li><strong>Nombres y Apellidos</strong>: Nombre completo del participante</li>
-            <li><strong>Fecha del Evento</strong>: Fecha en formato DD/MM/YYYY</li>
-            <li><strong>Tipo de Asistente</strong>: ASISTENTE, PONENTE o ORGANIZADOR</li>
-            <li><strong>Nombre del Evento</strong>: Nombre del evento</li>
-        </ul>
-        
-        <p><strong>Ejemplo de archivo CSV:</strong></p>
-        <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 4px;">DNI,Nombres y Apellidos,Fecha del Evento,Tipo de Asistente,Nombre del Evento
-1234567,Juan Pérez García,15/11/2025,ASISTENTE,Capacitación 2025
-00123456,María López,15/11/2025,PONENTE,Capacitación 2025</pre>
-        
-        <p><strong>💡 Consejo:</strong> Marca la opción "Solo validar" para revisar el archivo antes de importarlo.</p>
+    <div class="compact-info">
+        <p><strong>Formato requerido:</strong> DNI, Nombres y Apellidos, Fecha del Evento, Tipo de Asistente, Nombre del Evento</p>
+        <p><strong>Tipos válidos:</strong> ASISTENTE, PONENTE, ORGANIZADOR | <strong>Fecha:</strong> DD/MM/YYYY</p>
     </div>
     
-    <form method="post" enctype="multipart/form-data" class="module">
+    <form method="post" enctype="multipart/form-data" id="csvForm">
         {% csrf_token %}
         
-        {% if form.errors %}
-        <div class="errornote">
-            <p>Por favor corrija los siguientes errores:</p>
-            {{ form.errors }}
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📄</div>
+            <h3>Arrastra tu archivo CSV aquí o haz clic para seleccionar</h3>
+            <p style="color: #666; margin-top: 10px;">Formatos: .csv | Máximo: 10MB</p>
+            <input type="file" name="csv_file" id="id_csv_file" accept=".csv" style="display: none;" required>
+            <div id="fileName" style="margin-top: 15px; font-weight: 600; color: #417690;"></div>
         </div>
-        {% endif %}
         
-        <fieldset class="module aligned">
-            <div class="form-row">
-                <div>
-                    <label for="id_csv_file" class="required">{{ form.csv_file.label }}:</label>
-                    {{ form.csv_file }}
-                    {% if form.csv_file.help_text %}
-                    <p class="help">{{ form.csv_file.help_text }}</p>
-                    {% endif %}
-                    {% if form.csv_file.errors %}
-                    <p class="errornote">{{ form.csv_file.errors }}</p>
-                    {% endif %}
+        <div class="format-example">
+            <strong>Ejemplo de formato CSV:</strong><br>
+            DNI,Nombres y Apellidos,Fecha del Evento,Tipo de Asistente,Nombre del Evento<br>
+            12345678,Juan Pérez García,15/11/2025,ASISTENTE,Capacitación 2025<br>
+            87654321,María López Quispe,15/11/2025,PONENTE,Capacitación 2025
+        </div>
+        
+        <div id="validationResults" style="display: none;">
+            <h2>Vista Previa de Validación</h2>
+            
+            <div class="quick-stats">
+                <div class="stat-card success">
+                    <div class="stat-number" id="validCount">0</div>
+                    <div class="stat-label">Registros Válidos</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-number" id="warningCount">0</div>
+                    <div class="stat-label">Advertencias</div>
+                </div>
+                <div class="stat-card error">
+                    <div class="stat-number" id="errorCount">0</div>
+                    <div class="stat-label">Errores</div>
                 </div>
             </div>
             
-            <div class="form-row">
-                <div>
-                    <label for="id_validate_only">
-                        {{ form.validate_only }}
-                        {{ form.validate_only.label }}
-                    </label>
-                    {% if form.validate_only.help_text %}
-                    <p class="help">{{ form.validate_only.help_text }}</p>
-                    {% endif %}
-                </div>
+            <div id="errorList" style="display: none; background: #f8d7da; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                <h3 style="margin-top: 0; color: #721c24;">❌ Errores Encontrados:</h3>
+                <ul id="errorItems" style="margin: 0; padding-left: 20px;"></ul>
             </div>
-        </fieldset>
+            
+            <div id="warningList" style="display: none; background: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                <h3 style="margin-top: 0; color: #856404;">⚠️ Advertencias:</h3>
+                <ul id="warningItems" style="margin: 0; padding-left: 20px;"></ul>
+            </div>
+            
+            <div class="validation-preview">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fila</th>
+                            <th>DNI</th>
+                            <th>Nombre</th>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewTable"></tbody>
+                </table>
+            </div>
+        </div>
         
-        <div class="submit-row">
-            <input type="submit" value="Procesar Archivo" class="default" />
-            <a href="{% url 'admin:certificates_participant_changelist' %}" class="button cancel-link">Cancelar</a>
+        <div class="action-buttons">
+            <button type="button" class="btn-primary" id="validateBtn" style="display: none;">
+                🔍 Validar Archivo
+            </button>
+            <button type="submit" class="btn-primary" id="importBtn" style="display: none;">
+                ✅ Importar Datos
+            </button>
+            <a href="{% url 'admin:certificates_participant_changelist' %}" class="btn-secondary">
+                ❌ Cancelar
+            </a>
         </div>
     </form>
-    
-    <div class="module" style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
-        <h3 style="margin-top: 0;">⚠️ Importante</h3>
-        <ul>
-            <li>Los DNI se normalizarán automáticamente con ceros a la izquierda (ej: 1234567 → 01234567)</li>
-            <li>Si un participante ya existe, se actualizarán sus datos</li>
-            <li>El archivo debe estar en formato CSV (separado por comas)</li>
-            <li>Tamaño máximo: 10MB</li>
-        </ul>
-    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('id_csv_file');
+    const fileName = document.getElementById('fileName');
+    const validateBtn = document.getElementById('validateBtn');
+    const importBtn = document.getElementById('importBtn');
+    const validationResults = document.getElementById('validationResults');
+    
+    // Click en zona de carga
+    uploadZone.addEventListener('click', () => fileInput.click());
+    
+    // Drag & drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect();
+        }
+    });
+    
+    // Selección de archivo
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            fileName.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+            validateBtn.style.display = 'inline-block';
+            importBtn.style.display = 'none';
+            validationResults.style.display = 'none';
+        }
+    }
+    
+    // Validar archivo
+    validateBtn.addEventListener('click', async function() {
+        const file = fileInput.files[0];
+        if (!file) return;
+        
+        validateBtn.disabled = true;
+        validateBtn.textContent = '⏳ Validando...';
+        
+        try {
+            const text = await file.text();
+            const result = validateCSV(text);
+            displayValidationResults(result);
+            
+            if (result.errors.length === 0) {
+                importBtn.style.display = 'inline-block';
+            }
+        } catch (error) {
+            alert('Error al leer el archivo: ' + error.message);
+        } finally {
+            validateBtn.disabled = false;
+            validateBtn.textContent = '🔍 Validar Archivo';
+        }
+    });
+    
+    function validateCSV(text) {
+        const lines = text.trim().split('\n');
+        const result = {
+            valid: [],
+            warnings: [],
+            errors: []
+        };
+        
+        if (lines.length < 2) {
+            result.errors.push('El archivo está vacío o no tiene datos');
+            return result;
+        }
+        
+        const headers = lines[0].split(',').map(h => h.trim());
+        const required = ['DNI', 'Nombres y Apellidos', 'Fecha del Evento', 'Tipo de Asistente', 'Nombre del Evento'];
+        
+        // Validar headers
+        for (const req of required) {
+            if (!headers.includes(req)) {
+                result.errors.push(`Falta la columna: ${req}`);
+            }
+        }
+        
+        if (result.errors.length > 0) return result;
+        
+        // Validar filas
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim());
+            if (values.length < 5 || values.every(v => !v)) continue;
+            
+            const row = {
+                number: i + 1,
+                dni: values[0],
+                name: values[1],
+                date: values[2],
+                type: values[3],
+                event: values[4],
+                status: 'valid',
+                message: ''
+            };
+            
+            // Validar DNI
+            const dniClean = row.dni.replace(/\D/g, '');
+            if (!dniClean) {
+                row.status = 'error';
+                row.message = 'DNI inválido';
+                result.errors.push(`Fila ${row.number}: DNI inválido`);
+            } else if (dniClean.length > 8) {
+                row.status = 'error';
+                row.message = 'DNI muy largo';
+                result.errors.push(`Fila ${row.number}: DNI no puede tener más de 8 dígitos`);
+            } else if (dniClean !== row.dni) {
+                row.status = 'warning';
+                row.message = `DNI se normalizará a ${dniClean.padStart(8, '0')}`;
+                result.warnings.push(`Fila ${row.number}: ${row.message}`);
+                row.dni = dniClean.padStart(8, '0');
+            }
+            
+            // Validar nombre
+            if (!row.name) {
+                row.status = 'error';
+                row.message = 'Nombre vacío';
+                result.errors.push(`Fila ${row.number}: Nombre no puede estar vacío`);
+            }
+            
+            // Validar tipo
+            const validTypes = ['ASISTENTE', 'PONENTE', 'ORGANIZADOR'];
+            if (!validTypes.includes(row.type.toUpperCase())) {
+                row.status = 'error';
+                row.message = 'Tipo inválido';
+                result.errors.push(`Fila ${row.number}: Tipo debe ser ASISTENTE, PONENTE u ORGANIZADOR`);
+            }
+            
+            // Validar fecha
+            if (!row.date.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                row.status = 'error';
+                row.message = 'Formato de fecha inválido';
+                result.errors.push(`Fila ${row.number}: Fecha debe estar en formato DD/MM/YYYY`);
+            }
+            
+            if (row.status === 'valid') {
+                result.valid.push(row);
+            }
+        }
+        
+        return result;
+    }
+    
+    function displayValidationResults(result) {
+        validationResults.style.display = 'block';
+        
+        document.getElementById('validCount').textContent = result.valid.length;
+        document.getElementById('warningCount').textContent = result.warnings.length;
+        document.getElementById('errorCount').textContent = result.errors.length;
+        
+        // Mostrar errores
+        const errorList = document.getElementById('errorList');
+        const errorItems = document.getElementById('errorItems');
+        if (result.errors.length > 0) {
+            errorList.style.display = 'block';
+            errorItems.innerHTML = result.errors.slice(0, 10).map(e => `<li>${e}</li>`).join('');
+            if (result.errors.length > 10) {
+                errorItems.innerHTML += `<li><em>... y ${result.errors.length - 10} errores más</em></li>`;
+            }
+        } else {
+            errorList.style.display = 'none';
+        }
+        
+        // Mostrar advertencias
+        const warningList = document.getElementById('warningList');
+        const warningItems = document.getElementById('warningItems');
+        if (result.warnings.length > 0) {
+            warningList.style.display = 'block';
+            warningItems.innerHTML = result.warnings.slice(0, 5).map(w => `<li>${w}</li>`).join('');
+            if (result.warnings.length > 5) {
+                warningItems.innerHTML += `<li><em>... y ${result.warnings.length - 5} advertencias más</em></li>`;
+            }
+        } else {
+            warningList.style.display = 'none';
+        }
+        
+        // Mostrar tabla de vista previa
+        const previewTable = document.getElementById('previewTable');
+        const rows = [...result.valid].slice(0, 20);
+        previewTable.innerHTML = rows.map(row => `
+            <tr>
+                <td>${row.number}</td>
+                <td>${row.dni}</td>
+                <td>${row.name}</td>
+                <td>${row.date}</td>
+                <td>${row.type}</td>
+                <td><span class="status-badge status-${row.status}">${row.status === 'valid' ? '✓ Válido' : row.message}</span></td>
+            </tr>
+        `).join('');
+        
+        if (result.valid.length > 20) {
+            previewTable.innerHTML += `<tr><td colspan="6" style="text-align: center; color: #666;"><em>... y ${result.valid.length - 20} registros más</em></td></tr>`;
+        }
+    }
+});
+</script>
 {% endblock %}
