@@ -46,6 +46,8 @@ class CertificateQueryView(TemplateView):
 
     def post(self, request, *args, **kwargs):
         """Procesa la búsqueda de certificados por DNI"""
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        
         form = DNIQueryForm(request.POST)
         
         if form.is_valid():
@@ -57,7 +59,7 @@ class CertificateQueryView(TemplateView):
             ).select_related(
                 'participant',
                 'participant__event'
-            ).order_by('-participant__event__event_date')
+            ).order_by('-generated_at')  # Más reciente primero
             
             # Convertir a lista para evitar queries adicionales
             certificates_list = list(certificates)
@@ -76,8 +78,26 @@ class CertificateQueryView(TemplateView):
             
             context = self.get_context_data(**kwargs)
             context['form'] = form
-            context['certificates'] = certificates_list
             context['dni'] = dni
+            context['total_certificates'] = len(certificates_list)
+            
+            # Si hay más de 10 certificados, usar paginación
+            if len(certificates_list) > 10:
+                paginator = Paginator(certificates_list, 10)  # 10 por página
+                page = request.POST.get('page', 1)
+                
+                try:
+                    certificates_page = paginator.page(page)
+                except PageNotAnInteger:
+                    certificates_page = paginator.page(1)
+                except EmptyPage:
+                    certificates_page = paginator.page(paginator.num_pages)
+                
+                context['certificates'] = certificates_page
+                context['use_pagination'] = True
+            else:
+                context['certificates'] = certificates_list
+                context['use_pagination'] = False
             
             return self.render_to_response(context)
         

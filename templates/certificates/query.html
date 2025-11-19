@@ -135,13 +135,13 @@
         color: #212529;
         font-weight: 600;
         font-size: 0.9rem;
-        line-height: 1.3;
+        line-height: 1.4;
+        display: inline;
     }
     
-    .event-details {
+    .event-meta {
         color: #6c757d;
         font-size: 0.8rem;
-        line-height: 1.4;
     }
     
     .badge-type {
@@ -296,59 +296,54 @@
             {% for certificate in certificates %}
             <div class="certificate-card card">
                 <div class="card-body py-2 px-3">
-                    <div class="row align-items-center g-2">
-                        <div class="col-lg-8 col-md-7">
-                            <div class="d-flex flex-column">
-                                <span class="event-name mb-1">
-                                    <i class="bi bi-calendar-event me-1 text-primary"></i>
-                                    {% if certificate.participant.event.name|length > 70 %}
-                                        <span title="{{ certificate.participant.event.name }}">
-                                            {{ certificate.participant.event.name|slice:":70" }}...
-                                        </span>
-                                    {% else %}
-                                        {{ certificate.participant.event.name }}
-                                    {% endif %}
-                                </span>
-                                <div class="event-details">
-                                    <i class="bi bi-calendar3 me-1"></i>
-                                    {{ certificate.participant.event.event_date|date:"d/m/Y" }}
-                                    <span class="mx-1">•</span>
-                                    {% if certificate.participant.attendee_type == "ASISTENTE" %}
-                                        <span class="badge badge-type bg-info">
-                                            <i class="bi bi-person-check"></i> Asistente
-                                        </span>
-                                    {% elif certificate.participant.attendee_type == "PONENTE" %}
-                                        <span class="badge badge-type bg-success">
-                                            <i class="bi bi-mic-fill"></i> Ponente
-                                        </span>
-                                    {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
-                                        <span class="badge badge-type" style="background-color: #6f42c1;">
-                                            <i class="bi bi-gear-fill"></i> Organizador
-                                        </span>
-                                    {% endif %}
-                                    <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       class="badge badge-type bg-success ms-1 text-decoration-none" 
-                                       title="Verificar firma digital en FirmaPerú">
-                                        <i class="bi bi-shield-fill-check"></i> Firma Digital
-                                    </a>
-                                </div>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="flex-grow-1" style="min-width: 300px;">
+                            <div class="event-name">
+                                <i class="bi bi-calendar-event me-1 text-primary"></i>
+                                {% if certificate.participant.event.name|length > 100 %}
+                                    <span title="{{ certificate.participant.event.name }}">
+                                        {{ certificate.participant.event.name|slice:":100" }}...
+                                    </span>
+                                {% else %}
+                                    {{ certificate.participant.event.name }}
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-5">
-                            <div class="d-flex gap-2 justify-content-md-end">
-                                <a href="{% url 'certificates:download' certificate.uuid %}" 
-                                   class="btn btn-download btn-action btn-sm"
-                                   title="Descargar certificado en PDF">
-                                    <i class="bi bi-download"></i> Descargar
-                                </a>
-                                <a href="{% url 'certificates:verify' certificate.uuid %}" 
-                                   class="btn btn-verify btn-action btn-sm"
-                                   title="Ver detalles y verificar autenticidad">
-                                    <i class="bi bi-shield-check"></i> Verificar
-                                </a>
-                            </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="event-meta text-nowrap">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                {{ certificate.participant.event.event_date|date:"d/m/Y" }}
+                            </span>
+                            {% if certificate.participant.attendee_type == "ASISTENTE" %}
+                                <span class="badge badge-type bg-info text-nowrap">
+                                    <i class="bi bi-person-check"></i> Asistente
+                                </span>
+                            {% elif certificate.participant.attendee_type == "PONENTE" %}
+                                <span class="badge badge-type bg-success text-nowrap">
+                                    <i class="bi bi-mic-fill"></i> Ponente
+                                </span>
+                            {% elif certificate.participant.attendee_type == "ORGANIZADOR" %}
+                                <span class="badge badge-type text-nowrap" style="background-color: #6f42c1;">
+                                    <i class="bi bi-gear-fill"></i> Organizador
+                                </span>
+                            {% endif %}
+                            <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               class="badge badge-type bg-success text-decoration-none text-nowrap" 
+                               title="Verificar firma digital en FirmaPerú">
+                                <i class="bi bi-shield-fill-check"></i> Firma Digital
+                            </a>
+                            <a href="{% url 'certificates:download' certificate.uuid %}" 
+                               class="btn btn-download btn-action btn-sm text-nowrap"
+                               title="Descargar certificado en PDF">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                            <a href="{% url 'certificates:verify' certificate.uuid %}" 
+                               class="btn btn-verify btn-action btn-sm text-nowrap"
+                               title="Ver detalles y verificar autenticidad">
+                                <i class="bi bi-shield-check"></i> Verificar
+                            </a>
                         </div>
                     </div>
                 </div>
