@@ -470,19 +470,27 @@ class CertificateAdmin(BaseAdmin):
         
         actions = []
         
+        # Botón de ver/descargar
+        if obj.is_external and obj.external_url:
+            actions.append(
+                f'<a href="{obj.external_url}" target="_blank" class="button" '
+                f'style="font-size: 14px; padding: 5px 10px; background-color: #007cba; color: white;" '
+                f'title="Ver certificado externo">👁️</a>'
+            )
+        elif obj.pdf_file:
+            actions.append(
+                f'<a href="{obj.pdf_file.url}" target="_blank" class="button" '
+                f'style="font-size: 14px; padding: 5px 10px; background-color: #28a745; color: white;" '
+                f'title="Descargar PDF">⬇️</a>'
+            )
+        
         # Botón de editar
         edit_url = reverse('admin:certificates_certificate_change', args=[obj.pk])
-        actions.append(f'<a href="{edit_url}" class="button" style="font-size: 11px; padding: 3px 8px;">✏️</a>')
-        
-        # Botón de eliminar
-        delete_url = reverse('admin:certificates_certificate_delete', args=[obj.pk])
-        actions.append(f'<a href="{delete_url}" class="button" style="font-size: 11px; padding: 3px 8px; background-color: #dc3545; color: white;">🗑️</a>')
-        
-        # Botón de ver
-        if obj.is_external and obj.external_url:
-            actions.append(f'<a href="{obj.external_url}" target="_blank" class="button" style="font-size: 11px; padding: 3px 8px;">👁️</a>')
-        elif obj.pdf_file:
-            actions.append(f'<a href="{obj.pdf_file.url}" target="_blank" class="button" style="font-size: 11px; padding: 3px 8px;">👁️</a>')
+        actions.append(
+            f'<a href="{edit_url}" class="button" '
+            f'style="font-size: 14px; padding: 5px 10px; background-color: #ffc107; color: #000;" '
+            f'title="Editar">✏️</a>'
+        )
         
         return format_html(' '.join(actions))
     
