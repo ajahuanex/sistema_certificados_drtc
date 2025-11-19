@@ -98,10 +98,16 @@ class ExcelProcessorService:
             if col not in row_data or not row_data[col]:
                 return (False, f"Campo '{col}' está vacío")
         
-        # Validar formato de DNI (8 dígitos numéricos)
-        dni = str(row_data['DNI']).strip()
-        if not re.match(r'^\d{8}$', dni):
-            return (False, f"DNI '{dni}' debe tener 8 dígitos numéricos")
+        # Validar formato de DNI (debe tener entre 1 y 8 dígitos numéricos)
+        dni_raw = str(row_data['DNI']).strip()
+        # Remover cualquier caracter no numérico
+        dni_clean = ''.join(filter(str.isdigit, dni_raw))
+        
+        if not dni_clean:
+            return (False, f"DNI '{dni_raw}' debe contener dígitos numéricos")
+        
+        if len(dni_clean) > 8:
+            return (False, f"DNI '{dni_raw}' no puede tener más de 8 dígitos")
         
         # Validar tipo de asistente
         valid_types = ['ASISTENTE', 'PONENTE', 'ORGANIZADOR']
@@ -169,8 +175,13 @@ class ExcelProcessorService:
         if created:
             logger.info(f"Evento creado: {event.name} - {event.event_date}")
         
-        # Crear o actualizar el participante
-        dni = str(row_data['DNI']).strip()
+        # Procesar DNI: asegurar que tenga 8 dígitos con ceros a la izquierda
+        dni_raw = str(row_data['DNI']).strip()
+        # Remover cualquier caracter no numérico
+        dni_clean = ''.join(filter(str.isdigit, dni_raw))
+        # Rellenar con ceros a la izquierda hasta 8 dígitos
+        dni = dni_clean.zfill(8)
+        
         attendee_type = str(row_data['Tipo de Asistente']).strip().upper()
         
         participant, created = Participant.objects.update_or_create(

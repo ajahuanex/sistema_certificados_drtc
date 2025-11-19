@@ -45,24 +45,19 @@ class DNIQueryForm(forms.Form):
     dni = forms.CharField(
         label="DNI",
         max_length=8,
-        min_length=8,
-        help_text="Ingrese su número de DNI (8 dígitos)",
+        min_length=1,
+        help_text="Ingrese su número de DNI (hasta 8 dígitos)",
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
                 "placeholder": "12345678",
-                "pattern": "[0-9]{8}",
+                "pattern": "[0-9]{1,8}",
             }
         ),
-        validators=[
-            RegexValidator(
-                r"^\d{8}$", "El DNI debe contener exactamente 8 dígitos numéricos"
-            )
-        ],
     )
 
     def clean_dni(self):
-        """Valida y limpia el DNI"""
+        """Valida y limpia el DNI, rellenando con ceros a la izquierda"""
         dni = self.cleaned_data.get("dni")
 
         if dni:
@@ -73,8 +68,11 @@ class DNIQueryForm(forms.Form):
             if not dni.isdigit():
                 raise ValidationError("El DNI solo debe contener números")
 
-            # Validar longitud
-            if len(dni) != 8:
-                raise ValidationError("El DNI debe tener exactamente 8 dígitos")
+            # Validar longitud máxima
+            if len(dni) > 8:
+                raise ValidationError("El DNI no puede tener más de 8 dígitos")
+            
+            # Rellenar con ceros a la izquierda hasta 8 dígitos
+            dni = dni.zfill(8)
 
         return dni
