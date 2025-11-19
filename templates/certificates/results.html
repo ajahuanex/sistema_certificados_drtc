@@ -432,7 +432,13 @@
                             <td class="row-number">{{ forloop.counter }}</td>
                             <td>
                                 <i class="bi bi-calendar-event me-1 text-primary"></i>
-                                {{ certificate.participant.event.name }}
+                                <span title="{{ certificate.participant.event.name }}">
+                                    {% if certificate.participant.event.name|length > 50 %}
+                                        {{ certificate.participant.event.name|slice:":50" }}...
+                                    {% else %}
+                                        {{ certificate.participant.event.name }}
+                                    {% endif %}
+                                </span>
                             </td>
                             <td class="text-small">
                                 {{ certificate.participant.event.event_date|date:"d/m/Y" }}
@@ -476,22 +482,25 @@
                                     <a href="{% url 'certificates:download' certificate.uuid %}" 
                                        class="btn-action btn-download" 
                                        target="_blank"
-                                       title="Descargar PDF">
-                                        <i class="bi bi-download"></i>PDF
+                                       title="Descargar certificado PDF"
+                                       style="font-size: 1.2rem; padding: 0.4rem 0.7rem;">
+                                        ⬇️
                                     </a>
                                     <a href="{% url 'certificates:verify' certificate.uuid %}" 
                                        class="btn-action btn-verify"
                                        target="_blank"
-                                       title="Verificar">
-                                        <i class="bi bi-qr-code"></i>QR
+                                       title="Verificar con código QR"
+                                       style="font-size: 1.2rem; padding: 0.4rem 0.7rem;">
+                                        📱
                                     </a>
                                     {% if certificate.is_signed %}
                                     <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
                                        class="btn-action btn-signature"
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       title="Verificar Firma Digital en FirmaPerú">
-                                        <i class="bi bi-shield-fill-check"></i>Firma
+                                       title="Verificar firma digital"
+                                       style="font-size: 1.2rem; padding: 0.4rem 0.7rem;">
+                                        ✅
                                     </a>
                                     {% endif %}
                                 </div>
