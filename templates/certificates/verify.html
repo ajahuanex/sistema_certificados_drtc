@@ -7,22 +7,23 @@
     .verify-header {
         background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
         color: white;
-        padding: 2.5rem 0;
-        margin-bottom: 2rem;
-        border-radius: 0.5rem;
+        padding: 2rem 0;
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(13, 71, 161, 0.3);
     }
     
     .verification-card {
         border: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border-radius: 0.75rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
         overflow: hidden;
     }
     
     .verification-card .card-header {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
-        padding: 1.5rem;
+        padding: 1rem;
         border: none;
     }
     
@@ -31,80 +32,128 @@
     }
     
     .info-section {
-        padding: 1.5rem;
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        border: 1px solid #e9ecef;
+    }
+    
+    .info-section h5 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+        color: #0d47a1;
+        font-weight: 700;
     }
     
     .info-item {
-        padding: 1rem 0;
-        border-bottom: 1px solid #dee2e6;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
     }
     
     .info-item:last-child {
         border-bottom: none;
+        padding-bottom: 0;
     }
     
     .info-label {
         font-weight: 600;
         color: #495057;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.15rem;
+        font-size: 0.85rem;
     }
     
     .info-value {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         color: #212529;
     }
     
     .badge-large {
-        font-size: 1rem;
-        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        font-weight: 600;
     }
     
     .signature-badge {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        padding: 0.75rem;
+        border-radius: 8px;
         text-align: center;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
     
     .signature-badge.unsigned {
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
     }
     
+    .signature-badge .fw-bold {
+        font-size: 0.9rem;
+    }
+    
+    .signature-badge .small {
+        font-size: 0.8rem;
+    }
+    
     .qr-section {
         text-align: center;
-        padding: 2rem;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e9ecef;
     }
     
     .qr-code-display {
-        max-width: 250px;
-        margin: 1rem auto;
-        padding: 1rem;
+        max-width: 200px;
+        margin: 0.75rem auto;
+        padding: 0.75rem;
         background-color: white;
         border: 3px solid #0d47a1;
-        border-radius: 0.5rem;
+        border-radius: 8px;
     }
     
     .verification-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
     }
     
     .alert-verification {
         border-left: 4px solid #28a745;
-        background-color: #d4edda;
+        background: linear-gradient(135deg, #d4edda 0%, #e8f5e9 100%);
+        padding: 1rem;
+        border-radius: 8px;
     }
     
     .alert-verification.invalid {
         border-left: 4px solid #dc3545;
-        background-color: #f8d7da;
+        background: linear-gradient(135deg, #f8d7da 0%, #ffebee 100%);
+    }
+    
+    .btn-action-verify {
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .btn-action-verify:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    @media (max-width: 768px) {
+        .verify-header {
+            padding: 1.5rem 0;
+        }
+        
+        .verification-icon {
+            font-size: 2rem;
+        }
+        
+        .info-section {
+            padding: 0.75rem;
+        }
     }
 </style>
 {% endblock %}
@@ -278,15 +327,15 @@
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
+                    <div class="d-grid gap-2 mt-3">
                         <a href="{% url 'certificates:download' certificate.uuid %}" 
-                           class="btn btn-primary btn-lg"
+                           class="btn btn-primary btn-action-verify"
                            target="_blank">
-                            <i class="bi bi-download me-2"></i>Descargar Certificado PDF
+                            <i class="bi bi-download me-2"></i>Descargar PDF
                         </a>
                         {% if certificate.is_signed %}
                         <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" 
-                           class="btn btn-success btn-lg"
+                           class="btn btn-success btn-action-verify"
                            target="_blank"
                            rel="noopener noreferrer"
                            title="Verificar firma digital del certificado en FirmaPerú">
@@ -294,10 +343,10 @@
                         </a>
                         <p class="text-center text-muted small mt-2 mb-0">
                             <i class="bi bi-info-circle me-1"></i>
-                            Descarga el certificado y súbelo al validador de FirmaPerú para verificar su autenticidad
+                            Descarga el PDF y súbelo al validador de FirmaPerú
                         </p>
                         {% endif %}
-                        <a href="{% url 'certificates:query' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'certificates:query' %}" class="btn btn-outline-secondary btn-action-verify">
                             <i class="bi bi-search me-2"></i>Buscar Otro Certificado
                         </a>
                     </div>
@@ -305,15 +354,15 @@
             </div>
             
             {% if certificate.qr_code %}
-            <div class="qr-section mt-4">
-                <h5 class="mb-3">
-                    <i class="bi bi-qr-code me-2"></i>Código QR de Verificación
-                </h5>
+            <div class="qr-section mt-3">
+                <h6 class="mb-2 fw-bold">
+                    <i class="bi bi-qr-code me-2"></i>Código QR
+                </h6>
                 <div class="qr-code-display">
                     <img src="{{ certificate.qr_code.url }}" alt="Código QR" class="img-fluid">
                 </div>
                 <p class="text-muted small mb-0">
-                    Escanee este código QR para verificar la autenticidad del certificado
+                    Escanea este código para verificar autenticidad
                 </p>
             </div>
             {% endif %}
