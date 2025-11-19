@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
+from django.contrib import messages
 from .models import (
     Event,
     Participant,
@@ -102,24 +103,128 @@ class ParticipantAdmin(BaseAdmin):
         "attendee_type",
         "has_certificate",
         "created_at",
+        "quick_actions",
     ]
     list_filter = ["attendee_type", "event", "created_at"]
     search_fields = ["full_name", "dni", "event__name"]
     ordering = ["-created_at"]
     raw_id_fields = ["event"]
+    list_editable = ["attendee_type"]
+    actions = ["generate_certificates_for_participants", "delete_selected_participants"]
+    
+    fieldsets = (
+        ('Información Personal', {
+            'fields': ('dni', 'full_name')
+        }),
+        ('Evento', {
+            'fields': ('event', 'attendee_type')
+        }),
+        ('Información del Sistema', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
 
     def has_certificate(self, obj):
         """Indica si el participante tiene certificado"""
         try:
             if obj.certificate:
+                cert_url = f'/admin/certificates/certificate/{obj.certificate.pk}/change/'
                 return format_html(
-                    '<span style="color: green;">✓</span>'
+                    '<a href="{}" style="color: green; font-weight: bold;">✓ Ver</a>',
+                    cert_url
                 )
         except Certificate.DoesNotExist:
             pass
-        return format_html('<span style="color: red;">✗</span>')
+        return format_html('<span style="color: #999;">✗ Sin certificado</span>')
 
     has_certificate.short_description = "Certificado"
+    
+    def quick_actions(self, obj):
+        """Acciones rápidas para cada participante"""
+        from django.urls import reverse
+        
+        actions = []
+        
+        # Botón de editar
+        edit_url = reverse('admin:certificates_participant_change', args=[obj.pk])
+        actions.append(f'<a href="{edit_url}" class="button" style="font-size: 11px; padding: 3px 8px;">✏️</a>')
+        
+        # Botón de eliminar
+        delete_url = reverse('admin:certificates_participant_delete', args=[obj.pk])
+        actions.append(f'<a href="{delete_url}" class="button" style="font-size: 11px; padding: 3px 8px; background-color: #dc3545; color: white;">🗑️</a>')
+        
+        # Botón de generar certificado si no tiene
+        try:
+            obj.certificate
+        except Certificate.DoesNotExist:
+            actions.append('<span style="font-size: 11px; color: #999;">📄 Sin cert.</span>')
+        
+        return format_html(' '.join(actions))
+    
+    quick_actions.short_description = "Acciones"
+    
+    @admin.action(description="📄 Generar certificados para participantes seleccionados")
+    def generate_certificates_for_participants(self, request, queryset):
+        """Genera certificados para los participantes seleccionados"""
+        from django.contrib import messages
+        from certificates.services.certificate_generator import CertificateGeneratorService
+        
+        service = CertificateGeneratorService()
+        success_count = 0
+        error_count = 0
+        
+        for participant in queryset:
+            # Verificar si ya tiene certificado
+            try:
+                participant.certificate
+                error_count += 1
+                continue
+            except Certificate.DoesNotExist:
+                pass
+            
+            # Generar certificado
+            result = service.generate_certificate(participant, user=request.user)
+            if result['success']:
+                success_count += 1
+            else:
+                error_count += 1
+        
+        if success_count > 0:
+            self.message_user(
+                request,
+                f"✓ Se generaron {success_count} certificados exitosamente",
+                messages.SUCCESS
+            )
+        
+        if error_count > 0:
+            self.message_user(
+                request,
+                f"⚠ {error_count} participantes ya tenían certificado o hubo errores",
+                messages.WARNING
+            )
+    
+    @admin.action(description="🗑️ Eliminar participantes seleccionados")
+    def delete_selected_participants(self, request, queryset):
+        """Elimina los participantes seleccionados"""
+        from django.contrib import messages
+        
+        count = queryset.count()
+        queryset.delete()
+        
+        self.message_user(
+            request,
+            f"✓ Se eliminaron {count} participantes exitosamente",
+            messages.SUCCESS
+        )
+    
+    def get_actions(self, request):
+        """Personalizar acciones disponibles"""
+        actions = super().get_actions(request)
+        # Remover la acción de eliminar por defecto de Django
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
 
 
 @admin.register(Certificate)
@@ -127,15 +232,16 @@ class CertificateAdmin(BaseAdmin):
     """Administración de certificados"""
 
     list_display = [
-        "uuid",
+        "uuid_short",
         "participant_name",
         "participant_dni",
         "event_name",
         "certificate_type",
         "signed_status",
         "generated_at",
+        "quick_actions",
     ]
-    list_filter = ["is_signed", "is_external", "generated_at", "signed_at"]
+    list_filter = ["is_signed", "is_external", "generated_at", "signed_at", "processing_status"]
     search_fields = [
         "uuid",
         "participant__full_name",
@@ -148,6 +254,7 @@ class CertificateAdmin(BaseAdmin):
         "generated_at",
         "signed_at",
         "qr_code_preview",
+        "pdf_preview",
     ]
     ordering = ["-generated_at"]
     raw_id_fields = ["participant"]
@@ -156,7 +263,42 @@ class CertificateAdmin(BaseAdmin):
         "download_pdf_action",
         "process_qr_action",
         "export_for_signing_action",
+        "delete_selected_certificates",
+        "mark_as_external",
+        "mark_as_internal",
     ]
+    
+    fieldsets = (
+        ('Información del Certificado', {
+            'fields': ('uuid', 'participant', 'verification_url')
+        }),
+        ('Tipo de Certificado', {
+            'fields': ('is_external', 'external_url', 'external_system'),
+            'description': 'Marcar como externo si el certificado está alojado en otro sistema'
+        }),
+        ('Archivos', {
+            'fields': ('pdf_file', 'qr_code', 'pdf_preview', 'qr_code_preview')
+        }),
+        ('Estado de Firma', {
+            'fields': ('is_signed', 'signed_at')
+        }),
+        ('Procesamiento QR', {
+            'fields': ('processing_status', 'original_pdf', 'qr_pdf', 'final_pdf', 'qr_image'),
+            'classes': ('collapse',)
+        }),
+        ('Fechas', {
+            'fields': ('generated_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def uuid_short(self, obj):
+        """Muestra UUID acortado"""
+        return format_html(
+            '<code style="font-size: 11px;">{}</code>',
+            str(obj.uuid)[:8]
+        )
+    uuid_short.short_description = "UUID"
 
     def participant_name(self, obj):
         """Nombre del participante"""
@@ -214,6 +356,46 @@ class CertificateAdmin(BaseAdmin):
         return "No disponible"
 
     qr_code_preview.short_description = "Código QR"
+    
+    def pdf_preview(self, obj):
+        """Muestra enlace para ver el PDF"""
+        if obj.is_external and obj.external_url:
+            return format_html(
+                '<a href="{}" target="_blank" class="button">🔗 Ver Certificado Externo</a>',
+                obj.external_url
+            )
+        elif obj.pdf_file:
+            return format_html(
+                '<a href="{}" target="_blank" class="button">📄 Ver PDF</a>',
+                obj.pdf_file.url
+            )
+        return "No disponible"
+    
+    pdf_preview.short_description = "Vista Previa"
+    
+    def quick_actions(self, obj):
+        """Acciones rápidas para cada certificado"""
+        from django.urls import reverse
+        
+        actions = []
+        
+        # Botón de editar
+        edit_url = reverse('admin:certificates_certificate_change', args=[obj.pk])
+        actions.append(f'<a href="{edit_url}" class="button" style="font-size: 11px; padding: 3px 8px;">✏️</a>')
+        
+        # Botón de eliminar
+        delete_url = reverse('admin:certificates_certificate_delete', args=[obj.pk])
+        actions.append(f'<a href="{delete_url}" class="button" style="font-size: 11px; padding: 3px 8px; background-color: #dc3545; color: white;">🗑️</a>')
+        
+        # Botón de ver
+        if obj.is_external and obj.external_url:
+            actions.append(f'<a href="{obj.external_url}" target="_blank" class="button" style="font-size: 11px; padding: 3px 8px;">👁️</a>')
+        elif obj.pdf_file:
+            actions.append(f'<a href="{obj.pdf_file.url}" target="_blank" class="button" style="font-size: 11px; padding: 3px 8px;">👁️</a>')
+        
+        return format_html(' '.join(actions))
+    
+    quick_actions.short_description = "Acciones"
 
     @admin.action(description="Firmar certificados seleccionados")
     def sign_certificates_action(self, request, queryset):
@@ -378,6 +560,54 @@ class CertificateAdmin(BaseAdmin):
                 f"❌ Error al crear ZIP: {str(e)}",
                 messages.ERROR
             )
+    
+    @admin.action(description="🗑️ Eliminar certificados seleccionados")
+    def delete_selected_certificates(self, request, queryset):
+        """Elimina los certificados seleccionados"""
+        from django.contrib import messages
+        
+        count = queryset.count()
+        queryset.delete()
+        
+        self.message_user(
+            request,
+            f"✓ Se eliminaron {count} certificados exitosamente",
+            messages.SUCCESS
+        )
+    
+    @admin.action(description="🔗 Marcar como certificados externos")
+    def mark_as_external(self, request, queryset):
+        """Marca los certificados seleccionados como externos"""
+        from django.contrib import messages
+        
+        count = queryset.update(is_external=True)
+        
+        self.message_user(
+            request,
+            f"✓ Se marcaron {count} certificados como externos",
+            messages.SUCCESS
+        )
+    
+    @admin.action(description="📄 Marcar como certificados internos")
+    def mark_as_internal(self, request, queryset):
+        """Marca los certificados seleccionados como internos"""
+        from django.contrib import messages
+        
+        count = queryset.update(is_external=False, external_url='', external_system='')
+        
+        self.message_user(
+            request,
+            f"✓ Se marcaron {count} certificados como internos",
+            messages.SUCCESS
+        )
+    
+    def get_actions(self, request):
+        """Personalizar acciones disponibles"""
+        actions = super().get_actions(request)
+        # Remover la acción de eliminar por defecto de Django
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
     
     def changelist_view(self, request, extra_context=None):
         """Agrega contexto adicional a la vista de lista"""
