@@ -1,0 +1,215 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║         🚀 COMANDOS RÁPIDOS PARA 161.132.47.99                           ║
+║            (COPIA Y PEGA - BASADO EN DESPLIEGUE EXITOSO)                  ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📋 SERVIDOR: 161.132.47.99
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  IMPORTANTE: Basado en despliegue exitoso de 161.132.47.92
+✅ Solo comandos manuales de Docker Compose
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 BLOQUE 1: CONECTAR Y CLONAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ssh root@161.132.47.99
+
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 BLOQUE 2: CONFIGURAR VARIABLES DE ENTORNO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cat > .env.production << 'EOF'
+SECRET_KEY=8k#m9@x2v$n4p7q!w5e8r1t6y3u0i9o2p5a7s4d6f8g1h3j5k7l9z0x2c4v6b8n
+DEBUG=False
+ALLOWED_HOSTS=161.132.47.99,localhost,127.0.0.1,certificados.transportespuno.gob.pe
+POSTGRES_DB=certificados_db
+POSTGRES_USER=certificados_user
+POSTGRES_PASSWORD=X9K2mP8vQ5nR7tY4wE6rT1yU3iO9pA5sD7fG0hJ2kL4zX6cV8bN1mQ3wE5rT7yU
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=R5tY7uI9oP1aS3dF5gH7jK9lZ2xC4vB6nM8qW0eR2tY4uI6oP8aS0dF2gH4jK6l
+PORT=7070
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+SECURE_BROWSER_XSS_FILTER=True
+SECURE_CONTENT_TYPE_NOSNIFF=True
+X_FRAME_OPTIONS=DENY
+STATIC_URL=/static/
+STATIC_ROOT=/app/staticfiles
+MEDIA_URL=/media/
+MEDIA_ROOT=/app/media
+LOG_LEVEL=INFO
+LOG_FILE=/app/logs/django.log
+DOMAIN=certificados.transportespuno.gob.pe
+SSL_EMAIL=admin@transportespuno.gob.pe
+EOF
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 BLOQUE 3: CONFIGURAR DOCKER COMPOSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cp docker-compose.prod.7070.yml docker-compose.yml
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 BLOQUE 4: CONSTRUIR E INICIAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose build
+docker compose up -d
+sleep 15
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 BLOQUE 5: CONFIGURAR APLICACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 BLOQUE 6: VERIFICAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose ps
+docker compose logs --tail=50
+curl http://localhost:7070/health/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ LISTO! ACCEDER A LA APLICACIÓN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Abre en tu navegador:
+
+   http://161.132.47.99:7070/admin/
+
+   Usuario:    admin
+   Contraseña: admin123
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 RESUMEN COMPLETO (Copia todo de una vez):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ssh root@161.132.47.99
+
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+cat > .env.production << 'EOF'
+SECRET_KEY=8k#m9@x2v$n4p7q!w5e8r1t6y3u0i9o2p5a7s4d6f8g1h3j5k7l9z0x2c4v6b8n
+DEBUG=False
+ALLOWED_HOSTS=161.132.47.99,localhost,127.0.0.1,certificados.transportespuno.gob.pe
+POSTGRES_DB=certificados_db
+POSTGRES_USER=certificados_user
+POSTGRES_PASSWORD=X9K2mP8vQ5nR7tY4wE6rT1yU3iO9pA5sD7fG0hJ2kL4zX6cV8bN1mQ3wE5rT7yU
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=R5tY7uI9oP1aS3dF5gH7jK9lZ2xC4vB6nM8qW0eR2tY4uI6oP8aS0dF2gH4jK6l
+PORT=7070
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+SECURE_BROWSER_XSS_FILTER=True
+SECURE_CONTENT_TYPE_NOSNIFF=True
+X_FRAME_OPTIONS=DENY
+STATIC_URL=/static/
+STATIC_ROOT=/app/staticfiles
+MEDIA_URL=/media/
+MEDIA_ROOT=/app/media
+LOG_LEVEL=INFO
+LOG_FILE=/app/logs/django.log
+DOMAIN=certificados.transportespuno.gob.pe
+SSL_EMAIL=admin@transportespuno.gob.pe
+EOF
+
+cp docker-compose.prod.7070.yml docker-compose.yml
+
+docker compose build
+docker compose up -d
+sleep 15
+
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+docker compose ps
+docker compose logs --tail=50
+
+echo "✅ DESPLIEGUE COMPLETADO!"
+echo "🌐 Acceso: http://161.132.47.99:7070/admin/"
+echo "👤 Usuario: admin"
+echo "🔑 Contraseña: admin123"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 COMANDOS ÚTILES POST-DESPLIEGUE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Cambiar contraseña de admin
+docker compose exec web python manage.py changepassword admin
+
+# Ver logs en tiempo real
+docker compose logs -f
+
+# Reiniciar servicios
+docker compose restart
+
+# Backup de base de datos
+docker compose exec postgres pg_dump -U certificados_user certificados_db > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Actualizar aplicación
+git pull origin main && docker compose build && docker compose up -d && docker compose exec web python manage.py migrate && docker compose exec web python manage.py collectstatic --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 SI ALGO FALLA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Ver logs detallados
+docker compose logs
+
+# Reiniciar todo
+docker compose down && docker compose up -d
+
+# Reconstruir desde cero
+docker compose down -v && docker compose build --no-cache && docker compose up -d
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    ✅ COMANDOS LISTOS PARA COPIAR                         ║
+║                                                                            ║
+║              Basado en despliegue exitoso de 161.132.47.92                ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝

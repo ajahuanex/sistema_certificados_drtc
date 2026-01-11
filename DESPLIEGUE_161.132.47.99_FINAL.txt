@@ -1,0 +1,224 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║         🚀 DESPLIEGUE FINAL - PUERTO 7070 CON NGINX PROXY                ║
+║            Servidor: 161.132.47.99                                        ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+✅ BASADO EN DESPLIEGUE EXITOSO DE 161.132.47.92
+✅ DOCKER-COMPOSE CONFIGURADO PARA PUERTO 7070
+✅ LISTO PARA NGINX PROXY INVERSO
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PASSWORDS GENERADOS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SECRET_KEY:        8k#m9@x2v$n4p7q!w5e8r1t6y3u0i9o2p5a7s4d6f8g1h3j5k7l9z0x2c4v6b8n
+POSTGRES_PASSWORD: X9K2mP8vQ5nR7tY4wE6rT1yU3iO9pA5sD7fG0hJ2kL4zX6cV8bN1mQ3wE5rT7yU
+REDIS_PASSWORD:    R5tY7uI9oP1aS3dF5gH7jK9lZ2xC4vB6nM8qW0eR2tY4uI6oP8aS0dF2gH4jK6l
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 1: CONECTAR AL SERVIDOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ssh root@161.132.47.99
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 2: CLONAR REPOSITORIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+git clone https://github.com/ajahuanex/sistema_certificados_drtc.git
+cd sistema_certificados_drtc
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 3: CREAR ARCHIVO .env.production
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cat > .env.production << 'EOF'
+# DJANGO SETTINGS
+SECRET_KEY=8k#m9@x2v$n4p7q!w5e8r1t6y3u0i9o2p5a7s4d6f8g1h3j5k7l9z0x2c4v6b8n
+DEBUG=False
+ALLOWED_HOSTS=161.132.47.99,localhost,127.0.0.1,certificados.transportespuno.gob.pe
+
+# DATABASE
+POSTGRES_DB=certificados_db
+POSTGRES_USER=certificados_user
+POSTGRES_PASSWORD=X9K2mP8vQ5nR7tY4wE6rT1yU3iO9pA5sD7fG0hJ2kL4zX6cV8bN1mQ3wE5rT7yU
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+
+# REDIS
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=R5tY7uI9oP1aS3dF5gH7jK9lZ2xC4vB6nM8qW0eR2tY4uI6oP8aS0dF2gH4jK6l
+
+# PORT
+PORT=7070
+
+# EMAIL (Opcional)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+
+# SECURITY
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+SECURE_BROWSER_XSS_FILTER=True
+SECURE_CONTENT_TYPE_NOSNIFF=True
+X_FRAME_OPTIONS=DENY
+
+# STATIC & MEDIA
+STATIC_URL=/static/
+STATIC_ROOT=/app/staticfiles
+MEDIA_URL=/media/
+MEDIA_ROOT=/app/media
+
+# LOGGING
+LOG_LEVEL=INFO
+LOG_FILE=/app/logs/django.log
+
+# DOMAIN
+DOMAIN=certificados.transportespuno.gob.pe
+SSL_EMAIL=admin@transportespuno.gob.pe
+EOF
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 4: USAR DOCKER-COMPOSE PARA PUERTO 7070
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Usar el docker-compose configurado para puerto 7070
+cp docker-compose.prod.7070.yml docker-compose.yml
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 5: CONSTRUIR E INICIAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose build
+docker compose up -d
+sleep 15
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 6: CONFIGURAR APLICACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py create_superuser_if_not_exists --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 PASO 7: VERIFICAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+docker compose ps
+docker compose logs --tail=50
+curl http://localhost:7070/health/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ APLICACIÓN CORRIENDO EN PUERTO 7070
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+La aplicación está escuchando en: localhost:7070
+
+Ahora configura tu Nginx Proxy Inverso para redirigir a localhost:7070
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 CONFIGURACIÓN NGINX PROXY INVERSO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+server {
+    listen 80;
+    server_name 161.132.47.99 certificados.transportespuno.gob.pe;
+
+    client_max_body_size 100M;
+
+    location / {
+        proxy_pass http://localhost:7070;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    location /static/ {
+        proxy_pass http://localhost:7070/static/;
+    }
+
+    location /media/ {
+        proxy_pass http://localhost:7070/media/;
+    }
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 ACCESO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Directo (sin proxy):  http://161.132.47.99:7070/admin/
+Con proxy:            http://161.132.47.99/admin/
+
+Usuario:    admin
+Contraseña: admin123
+
+⚠️  Cambiar contraseña:
+docker compose exec web python manage.py changepassword admin
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 COMANDOS ÚTILES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Ver logs
+docker compose logs -f
+
+# Reiniciar
+docker compose restart
+
+# Detener
+docker compose down
+
+# Backup
+docker compose exec postgres pg_dump -U certificados_user certificados_db > backup.sql
+
+# Actualizar
+git pull origin main
+docker compose build
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 RESUMEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Passwords aleatorios generados
+✅ Puerto 7070 configurado
+✅ IP 161.132.47.99 configurada
+✅ Listo para nginx proxy inverso
+✅ Sin scripts que instalen cosas extra
+✅ Solo Docker Compose
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    ✅ TODO LISTO PARA DESPLEGAR                           ║
+║                                                                            ║
+║              Copia los comandos y ejecútalos en el servidor               ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝

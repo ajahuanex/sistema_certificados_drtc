@@ -38,30 +38,60 @@ DATABASES = {
     }
 }
 
-# Cache Configuration with Redis - Override base settings for production
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': env('REDIS_URL', default='redis://redis:6379/0'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_KWARGS': {
-                'max_connections': 50,
-                'retry_on_timeout': True,
-            },
-            'SOCKET_CONNECT_TIMEOUT': 5,
-            'SOCKET_TIMEOUT': 5,
-            # HiredisParser removido - no está disponible en el contenedor
-            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-        },
-        'KEY_PREFIX': env('CACHE_KEY_PREFIX', default='certificados_prod'),
-        'TIMEOUT': env.int('CACHE_TIMEOUT', default=3600),  # 1 hora por defecto en producción
-    }
-}
+# Cache Configuration - Conditional Redis/Memory based on USE_REDIS
+USE_REDIS = env.bool('USE_REDIS', default=True)
 
-# Session Configuration with Redis - Override base settings for production
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+if USE_REDIS:
+    try:
+        # Verificar si django_redis está disponible
+        import django_redis
+        
+        # Redis Cache Configuration
+        CACHES = {
+            'default': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': env('REDIS_URL', default='redis://redis:6379/0'),
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                    'CONNECTION_POOL_KWARGS': {
+                        'max_connections': 50,
+                        'retry_on_timeout': True,
+                    },
+                    'SOCKET_CONNECT_TIMEOUT': 5,
+                    'SOCKET_TIMEOUT': 5,
+                    # HiredisParser removido - no está disponible en el contenedor
+                    'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+                },
+                'KEY_PREFIX': env('CACHE_KEY_PREFIX', default='certificados_prod'),
+                'TIMEOUT': env.int('CACHE_TIMEOUT', default=3600),  # 1 hora por defecto en producción
+            }
+        }
+        
+        # Session Configuration with Redis
+        SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+        SESSION_CACHE_ALIAS = 'default'
+        
+    except ImportError:
+        # Fallback a memoria si django_redis no está disponible
+        print("WARNING: django_redis no disponible, usando cache en memoria")
+        USE_REDIS = False
+
+if not USE_REDIS:
+    # Memory Cache Configuration (fallback when Redis is not available)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'certificados-cache',
+            'TIMEOUT': env.int('CACHE_TIMEOUT', default=3600),
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+                'CULL_FREQUENCY': 3,
+            }
+        }
+    }
+    
+    # Session Configuration with Database (fallback when Redis is not available)
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 horas
 SESSION_SAVE_EVERY_REQUEST = False
 SESSION_COOKIE_HTTPONLY = True
